@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конструктор скриптов продаж</title>
+<style>
+:root{
+  --bg:#f5f6fb; --panel:#fff; --border:#e3e5ee; --text:#181a23; --muted:#6b7080;
+  --accent:#4f46e5; --accent-hover:#4338ca; --accent-soft:#eef0ff;
+  --success:#16a34a; --success-soft:#eafaf0; --danger:#dc2626; --danger-soft:#fef1f1;
+  --warn:#d97706; --warn-soft:#fff7ea;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);}
+button,input,textarea,select{font-family:inherit;}
+#app{min-height:100vh;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:rgba(120,120,145,.35);border-radius:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ---------- shared ---------- */
+.btn{height:36px;padding:0 16px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn:hover{background:var(--bg);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+.btn.primary:hover{background:var(--accent-hover);}
+.btn.danger{color:var(--danger);}
+.btn.ghost{border-color:transparent;background:transparent;}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.icon-btn:hover{color:var(--text);background:var(--bg);}
+input[type=text],input[type=email],input[type=password],input[type=search]{height:38px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--text);padding:0 12px;font-size:13.5px;outline:none;}
+input[type=text]:focus,input[type=email]:focus,input[type=password]:focus,input[type=search]:focus{border-color:var(--accent);}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;}
+.muted{color:var(--muted);}
+.svg-icon{width:16px;height:16px;flex-shrink:0;}
+.overlay{position:fixed;inset:0;background:rgba(15,15,25,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
+.modal{background:var(--panel);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:88vh;display:flex;flex-direction:column;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border);}
+.modal-header h3{margin:0;font-size:17px;}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1;}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border);}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:500;}
+.chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:13px;padding:0;line-height:1;}
+.pill-btn{padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--panel);font-size:12.5px;cursor:pointer;}
+.pill-btn.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:300;}
+
+/* ---------- login ---------- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-box{width:100%;max-width:380px;}
+.login-brand{text-align:center;margin-bottom:26px;}
+.login-brand .mark{width:52px;height:52px;border-radius:16px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;margin:0 auto 14px;}
+.login-brand h1{font-size:20px;margin:0 0 4px;}
+.login-brand p{color:var(--muted);font-size:13px;margin:0;}
+.field-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+.field{margin-bottom:14px;}
+.field input{width:100%;}
+.demo-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6;}
+
+/* ---------- app shell ---------- */
+.topbar{height:60px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14.5px;}
+.topbar .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;}
+.topbar .spacer{flex:1;}
+.topbar .user{font-size:12.5px;color:var(--muted);margin-right:6px;}
+
+/* ---------- dashboard ---------- */
+.dash-wrap{max-width:1100px;margin:0 auto;padding:28px 24px 60px;}
+.dash-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.dash-toolbar h1{font-size:20px;margin:0;flex-shrink:0;}
+.dash-toolbar .grow{flex:1;min-width:160px;}
+.dash-toolbar input[type=search]{width:100%;}
+.view-toggle{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:3px;}
+.view-toggle button{width:32px;height:30px;border:none;background:transparent;border-radius:7px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;}
+.view-toggle button.active{background:var(--panel);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+.proj-card{padding:18px;display:flex;flex-direction:column;gap:10px;}
+.proj-card .name{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.proj-card .date{font-size:11.5px;color:var(--muted);}
+.proj-card .actions{display:flex;gap:6px;margin-top:auto;}
+.proj-list{display:flex;flex-direction:column;gap:8px;}
+.proj-row{padding:12px 16px;display:flex;align-items:center;gap:14px;}
+.proj-row .name{font-weight:600;font-size:13.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.proj-row .date{font-size:11.5px;color:var(--muted);width:100px;flex-shrink:0;}
+.proj-row .actions{display:flex;gap:6px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+
+/* ---------- editor ---------- */
+.editor-shell{display:flex;flex-direction:column;height:calc(100vh - 60px);}
+.editor-topbar{height:56px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--border);}
+.editor-topbar .proj-title{font-weight:700;font-size:14.5px;}
+.editor-body{flex:1;display:flex;overflow:hidden;}
+.tree-pane{width:420px;flex-shrink:0;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;}
+.tree-pane .search-box{padding:14px;border-bottom:1px solid var(--border);}
+.tree-pane .search-box input{width:100%;}
+.tree-scroll{flex:1;overflow-y:auto;padding:14px 10px 30px;}
+.node-row{display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:8px;cursor:pointer;position:relative;}
+.node-row:hover{background:var(--bg);}
+.node-row:hover .node-actions{display:flex;}
+.node-row .chevron{width:16px;height:16px;flex-shrink:0;color:var(--muted);transition:transform .12s ease;display:flex;align-items:center;justify-content:center;}
+.node-row .chevron.open{transform:rotate(90deg);}
+.node-row .node-icon{width:16px;height:16px;flex-shrink:0;color:var(--accent);}
+.node-row .node-icon.root{color:var(--success);}
+.node-row .title{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.node-row.root-row .title{font-weight:700;}
+.node-row .reuse-badge{font-size:10px;color:var(--muted);background:var(--bg);border-radius:5px;padding:1px 5px;flex-shrink:0;}
+.node-actions{display:none;gap:2px;flex-shrink:0;}
+.node-actions button{width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.node-actions button:hover{background:var(--panel);color:var(--text);box-shadow:0 0 0 1px var(--border);}
+.node-actions button.danger:hover{color:var(--danger);}
+.node-children{margin-left:19px;border-left:1px dashed var(--border);padding-left:10px;}
+.node-reply-box{margin:2px 0 6px 22px;padding:10px 12px;background:var(--bg);border-radius:9px;font-size:12.5px;line-height:1.55;color:var(--text);position:relative;}
+.node-reply-box.empty{color:var(--muted);font-style:italic;}
+.node-reply-box .edit-reply-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:6px;border:none;background:var(--panel);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .1s;}
+.node-reply-box:hover .edit-reply-btn{opacity:1;}
+.node-reply-box p{margin:0 0 6px;}
+.add-answers-link{margin:2px 0 10px 22px;font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;padding:4px 0;font-weight:600;}
+.add-answers-link:hover{text-decoration:underline;}
+.editor-main{flex:1;overflow-y:auto;padding:26px 32px;background:var(--bg);}
+.editor-hint{max-width:640px;color:var(--muted);font-size:13px;line-height:1.7;}
+.editor-hint h2{font-size:16px;color:var(--text);margin:0 0 10px;}
+
+/* ---------- add-answers modal ---------- */
+.new-answers-input{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);align-items:center;}
+.new-answers-input input{border:none;background:transparent;outline:none;flex:1;min-width:140px;font-size:13px;}
+.enter-hint{font-size:10.5px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:2px 6px;}
+.existing-answers-grid{display:flex;flex-wrap:wrap;gap:8px;max-height:260px;overflow-y:auto;padding:4px 2px;}
+
+/* ---------- branch view (read-only) ---------- */
+.branch-view .node-row{cursor:default;}
+.branch-view .node-actions{display:none !important;}
+.branch-view .add-answers-link{display:none;}
+
+/* ---------- operator (dark) ---------- */
+.op-shell{min-height:100vh;background:#0f1115;color:#f1f1f4;}
+.op-topbar{height:60px;display:flex;align-items:center;padding:0 20px;gap:12px;border-bottom:1px solid #262a33;}
+.op-topbar .title{font-weight:700;font-size:14px;flex:1;text-align:center;}
+.op-icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid #262a33;background:#181b22;color:#c7cad1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.op-icon-btn:hover{background:#20242c;}
+.op-icon-btn:disabled{opacity:.4;cursor:default;}
+.op-wrap{max-width:820px;margin:0 auto;padding:30px 24px 60px;}
+.op-card{background:#181b22;border:1px solid #262a33;border-radius:16px;padding:26px 30px;position:relative;}
+.op-card .op-actions{position:absolute;top:16px;right:18px;display:flex;gap:6px;}
+.op-card h2{font-size:21px;margin:0 22px 14px 0;}
+.op-card .reply{font-size:14.5px;line-height:1.7;}
+.op-card .reply.empty{color:#8b909b;font-style:italic;}
+.op-card .reply p{margin:0 0 10px;}
+.op-options{margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media (max-width:760px){.op-options{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:480px){.op-options{grid-template-columns:1fr;}}
+.op-options button{text-align:left;padding:14px 16px;border-radius:12px;border:1px solid #262a33;background:#181b22;color:#f1f1f4;cursor:pointer;font-size:13px;}
+.op-options button:hover{border-color:var(--accent);}
+.op-end{margin-top:18px;font-size:13px;color:#8b909b;font-style:italic;}
+
+/* ---------- misc additions ---------- */
+.modal.fullscreen{position:fixed;inset:0;width:100%;height:100%;max-height:100%;border-radius:0;}
+.modal-footer.spread{justify-content:space-between;}
+.color-input{width:30px;height:30px;padding:2px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--panel);}
+.users-row{padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.role-badge{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--accent-soft);color:var(--accent);flex-shrink:0;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+
+/* ================= DATA LAYER ================= */
+var STORAGE_KEY = 'ssb_data_v2';
+
+function uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function seedData() {
+  var adminId = uid('u');
+  var opId = uid('u');
+  var projId = uid('p');
+  var rootId = uid('n');
+  var data = {
+    users: [
+      { id: adminId, name: 'Админ', email: 'admin@example.com', password: 'admin123', role: 'admin' },
+      { id: opId, name: 'Оператор Демо', email: 'operator@example.com', password: 'operator123', role: 'operator' },
+    ],
+    projects: [
+      { id: projId, name: 'Демо-скрипт', ownerId: adminId, rootNodeId: rootId, createdAt: Date.now(), updatedAt: Date.now(), deletedAt: null },
+    ],
+    nodes: [
+      { id: rootId, projectId: projId, title: 'Начало разговора', managerReply: '<p>Здравствуйте! Меня зовут (Имя), чем могу помочь?</p>' },
+    ],
+    edges: [],
+    access: [
+      { id: uid('a'), projectId: projId, userId: opId, role: 'view' },
+    ],
+  };
+  var demoProjectDefs = [{"name":"CLICK — Подключение к сервисам (RU)","rootId":"n_ru1_612845","nodes":[{"id":"n_ru1_612845","title":"Начало разговора","reply":"<p>Здравствуйте. Оператор (Имя). Чем могу вам помочь ?</p>"},{"id":"n_ru1_612851","title":"Подключение (ошибка)","reply":"<p>Через какой интерфейс вы пытаетесь подключится ?</p>"},{"id":"n_ru1_612883","title":"WEB","reply":"<p>Именно какую ошибку выдает вам ?</p>"},{"id":"n_ru1_613638","title":"Пин не могу поставить","reply":"<p>Система не принимает код простой пин код то есть пин код состоявщий из 5ти одинаковых и последовательных цифр. Примеры: 55555 12345 98765.</p>"},{"id":"n_ru1_612930","title":"Понял","reply":"<p>Есть ли у вас еще вопросы ?</p>"},{"id":"n_ru1_612974","title":"Нет спасибо","reply":"<p>благодарим за обращение, ответьте на вопрос после звонка До свидание</p>"},{"id":"n_ru1_613637","title":"Код не приходит","reply":"<p><span style=\"font-family: 'arial black', 'avant garde'; color: #ff0000;\">Проверьте СМС в арме если там:</span><br/><span style=\"color: #ff0000; font-family: 'arial black', 'avant garde';\">\"Operator-OK/Client-OK\"</span> -- с нашей стороны смс вам уходят попробуйте заново или же проверьте смс от нашей системы нет ли в черном списке (спаме)<br/><span style=\"font-family: 'arial black', 'avant garde'; color: #ff0000;\">\"Operator-OK/Client-Err\" Отправляем в группу \"стп рабочая группа\" и тегаем сотрудников стп</span></p>"},{"id":"n_ru1_613489","title":"Если не получиться","reply":"<p>Если проделанные действия не дали положительного результата, пожалуйста снимите видео с другого устройства и отправьте его нам при помощи нашего телеграмм бота @clickuz. Наши специалисты проведут проверку.</p>"},{"id":"n_ru1_613636","title":"Заблокирована системой безопасности","reply":"<p>Вы находитесь в территории Республики Узбекистан ?</p>"},{"id":"n_ru1_616827","title":"Нет","reply":"<p>Вы можете пройти регистрацию находясь на территории Республики узбекистан или же можете пройти регистрацию подключив роуминг.</p>"},{"id":"n_ru1_616831","title":"Как подключить роуминг ?","reply":"<p>По этому вопросу вам надо обратиться в свою компанию мобильного оператора</p>"},{"id":"n_ru1_616826","title":"Да","reply":"<p>Не подключен ли у вас VPN ?</p>"},{"id":"n_ru1_616829","title":"Подключен","reply":"<p>Вам необходимо отключить VPN и зайти с мобильного интернета так как наша система считает вас за границей и не пропускает вас. </p>"},{"id":"n_ru1_616828","title":"Нет","reply":"<p>Вы через WiFi пытаетесь зайти ?</p>"},{"id":"n_ru1_616830","title":"Да","reply":"<p>Вам необходимо отключить WiFi и попробовать через мобильный интернет а далее при использования приложения можете через WiFi тоже</p>"},{"id":"n_ru1_613635","title":"Профиль заблокирован","reply":"<p><span style=\"font-family: 'arial black', 'avant garde'; color: #ff0000;\">Проверять \"Сессии CLICK Evolution\" в арме и если там написано заблокирован</span> <span style=\"color: #ff0000; font-family: 'arial black', 'avant garde';\">то спрашиваем модель телефона клиента и отправляем в группу \"СТП Рабочая группа\" Далее: <br/><span style=\"color: #000000;\">Из за того что вы  несколько раз неправильно ввели CLICK Pin у вас аккаунт заблокировался сейчас и убрали блок можете заново попробовать</span></span></p>"},{"id":"n_ru1_612882","title":"Telegram bot","reply":"<p>Именно какую ошибку выдает вам бот ?</p>"},{"id":"n_ru1_616903","title":"Pin код не получается установить","reply":"<p>Пин код как набираете именно ? Набираете самому боту т.е на поле для сообщение или же нажимаете на цифры которые вам предоставил бот ?</p>"},{"id":"n_ru1_616911","title":"На готовые цифры","reply":"<p><span>Система не принимает код простой пин код то есть пин код состоявщий из 5ти одинаковых и последовательных цифр. Примеры: 55555 12345 98765.</span></p>"},{"id":"n_ru1_616910","title":"в поле ввода сообщения","reply":"<p>Для подтверждения пин кода нужно нажать на цифры которые вам предоставил бот. </p>"},{"id":"n_ru1_616902","title":"ввожу смс код но бот не реагирует","reply":"<p>Смс код куда вы именно куда вводите ? <br/>Проходя через ссылку на наш сайт или самому боту ? </p>"},{"id":"n_ru1_616906","title":"В боте где можно написать сообщение","reply":"<p>Для того чтобы подтвердить смс код вам нужно нажать на кнопку \"Ввести код\" который дал вам бот и оттуда перейти на наш сайт</p>"},{"id":"n_ru1_616905","title":"На сайте","reply":"<p>Именно какую ошибку выдает вам можете прочитать ошибку пожалуйста</p>"},{"id":"n_ru1_616907","title":"На сайт вообще не входит и долго грузится","reply":"<p>А вы через какой браузер открываете ссылку ?</p>"},{"id":"n_ru1_616909","title":"Opera, explorer, Fire fox, uc browser и тд","reply":"<p>Попробуйте открыть сайт через браузер Google Chrome или через Safari если у вас Iphone</p>"},{"id":"n_ru1_616908","title":"Google Chrome или Safari","reply":"<p>Попробуйте очистить кеш браузера и проверьте соединение интернета</p>"},{"id":"n_ru1_616901","title":"Номер не принимает","reply":"<p>Для того чтобы зарегистрироваться к нашему боту ваш номер телефона в телеграме должен совпадать с номером телефона подключенной к CLICK. Если номера не совпадут то вам необходимо создать телеграм аккаунт с того номера к которому у вас CLICK подключен. </p>"},{"id":"n_ru1_616904","title":"У меня одинаковые номера","reply":"<p>Тогда ошибку можете по подробнее прочитать пожалуйста</p>"},{"id":"n_ru1_612881","title":"CLICK super app","reply":"<p>Именно какую ошибку выдает вам в приложении? </p>"},{"id":"n_ru1_897370","title":"sim карта","reply":"<div class=\"mb-8 p_editor_center_item_text\">\n<div class=\"\">\n<p>[скриншот в оригинале скрипта]<br/><br/><br/>SIM-карта (eSIM) с номером телефона, на который вы хотите открыть аккаунт в CLICK, должна быть установлена в устройстве, с которого вы выполняете вход по коду.</p>\n</div>\n</div>\n<div class=\"p_editor_center_item_answers\"> </div>"},{"id":"n_ru1_890762","title":"обнаружен root-доступ","reply":"<p>[скриншот в оригинале скрипта]<br/><br/>На вашем устройстве обнаружен root-доступ (расширенные права к системе устройства).</p>\n<p>Такие права позволяют изменять системные настройки и влиять на работу устройства, что может снижать уровень безопасности. По этой причине приложение Click не поддерживает работу на устройствах с активным root-доступом.</p>\n<p>Для безопасного использования приложения необходимо отключить root-доступ или воспользоваться другим устройством без таких прав.</p>\n<p>Обратите внимание, что способ удаления root-доступа зависит от того, каким образом он был установлен. Неправильные действия могут привести к сбоям в работе устройства или потере данных.</p>\n<p>В связи с этим рекомендуется обратиться в сервисный центр или к квалифицированному специалисту, чтобы безопасно удалить root-доступ и восстановить корректную работу устройства.</p>\n<p>До устранения проблемы вы можете воспользоваться альтернативными способами взаимодействия с системой CLICK (телеграм бот @clickuz. USSD *880#) <br/><br/><span style=\"color: rgb(22, 145, 121);\">Оператору:</span> отрпавить ссылку на регистрацию в телеграм @clickuz или же интсрукцию выполнения неоюходимых действий в USSD </p>"},{"id":"n_ru1_612880","title":"USSD (*880#)","reply":"<p>А именно какую ошибку выдает ? </p>"},{"id":"n_ru1_617880","title":"Карту не могу добавить","reply":"<p>Каким способом вы пытались добавить карту ?</p>"},{"id":"n_ru1_617882","title":"Ввел данные по Шорт запросу","reply":"<p>(Скопируем номер телефона клиента и проверяем в арм \"Мониторинг\" -- \"История регистрации карт\" </p>"},{"id":"n_ru1_617888","title":"Если 1B процессе","reply":"<div class=\"text-sm text-gray-700 bg-gray-50 p-4 rounded-lg text-center\">Реплика менеджера не указана!</div>"},{"id":"n_ru1_617887","title":"Если 1[05] ошибка","reply":"<p>Так как ваша карта Хумо при регистрации USSD могут возникать задержки в получении данных. Попробуйте добавить карту через наше приложение Click Up.</p>"},{"id":"n_ru1_617886","title":"Если Срок неверный","reply":"<p>Вы ввели неправильный срок действия карты. Убедитесь в правилности данных ваших карт и попробуйте заново</p>"},{"id":"n_ru1_617885","title":"Если SMS инфо не совпадает","reply":"<p>Услуга смс информирования подключена на другой номер. Номер <span>Смс информирование можно изменить через банк(Хумо) и банкоматы(Узкард)</span></p>"},{"id":"n_ru1_613437","title":"А вы не можете подключить ?","reply":"<p>К сожалению нет. Смс информирование можно подключить только через банкоматы</p>"},{"id":"n_ru1_617884","title":"Если SMS инфо \"0\"","reply":"<p>У вас не подключена услуга смс информирования. Смс информирование можно подключить через банк(Хумо) и банкоматы(Узкард).</p>"},{"id":"n_ru1_617881","title":"Выбирал в поэтапном порядке","reply":"<p>Для быстрого подключения карты вам нужно воспользоваться удобным способом по Шорт запросы, то есть *880*0*номер карты*срок действие# <br/><br/>(И отправим смс шаблон \"Регистрация USSD\")</p>"},{"id":"n_ru1_615811","title":"У вас нет подключенных карт","reply":"<p>Подключена ли у вас смс информирование ? </p>"},{"id":"n_ru1_615814","title":"Да","reply":"<p>Попробуйте ввести код регистрации заново</p>"},{"id":"n_ru1_613451","title":"Нет","reply":"<p>Ваша карта узкард или хумо ? </p>"},{"id":"n_ru1_612888","title":"Хумо","reply":"<p>Для подключении необходимо подключить смс инфо через банк</p>"},{"id":"n_ru1_612887","title":"Узкард","reply":"<p>Для подключении необходимо включить смс инфо через банкоматы</p>"},{"id":"n_ru1_612886","title":"Временно не возможно","reply":"<p>Такую карту не возможно добавить в систему</p>"},{"id":"n_ru1_612885","title":"ММИ ошибка","reply":"<p>попробуйте ввести данные быстрее так как в каждом разделе USSD есть ограничение на 15сек или же вы можете зарегистрировать карту набрав *880*0*номер карты*Срок действия#</p>"},{"id":"n_ru1_613439","title":"Я быстро набираю но все равно выдает ошибку","reply":"<p>Каким вы мобильным оператором пользуетесь ? </p>"},{"id":"n_ru1_613448","title":"Humans, Perfectum, Uzmobile (CDMA)","reply":"<p>Так как на этих сим картах не работает услуга USSD у вас выдает ошибку но вы можете использоварть наши онлайн интерфейсы без проблем</p>"},{"id":"n_ru1_613494","title":"Как подключиться на эти интерфейсы ?","reply":"<div class=\"text-sm text-gray-700 bg-gray-50 p-4 rounded-lg text-center\">Реплика менеджера не указана!</div>"},{"id":"n_ru1_613443","title":"Beeline, Ucell, MobiUz, Uzmobile(Gsm)","reply":"<p>Ваше устройство случайно не корейски ? </p>"},{"id":"n_ru1_613450","title":"Да Корейски","reply":"<p>Проблема в том что с корейских телефонов USSD выдаст ошибку поэтому попробуйте поставить сим карту на другое устройство и проверить</p>"},{"id":"n_ru1_612884","title":"Смс не подключен","reply":"<p>У вас карта Узкард или Хумо</p>"},{"id":"n_ru1_612852","title":"Подключение (новое)","reply":"<p>Через какой интерфейс вы хотите зарегистрироваться ?</p>"},{"id":"n_ru1_873540","title":"CLICK super app (авторизация)","reply":"<p>авторизация это процесс входа в уже существующий аккаунт. </p>\n<p>[скриншот в оригинале скрипта]</p>"},{"id":"n_ru1_618091","title":"Ограничение","reply":"<p>(Выясняем именно какую ошибку выдает клиенту) <br/>Причины ограничений:<br/>1. При регистрации с нового устройства.<br/>2. При переустановке приложения<br/>3. При перерегистрации аккаунта на другой<br/>4. При использовании VPN</p>"},{"id":"n_ru1_848175","title":"ТГ БОТ не работает (ограничения)","reply":"<p class=\"leading-8 font-normal\" data-pm-slice=\"1 1 []\">Причина ограничения Telegram-бота заключается в том, что среди устройств, вошедших в приложение Click  была обнаружена подозрительная сессия. Чтобы снять ограничения сейчас, зарегистрируйтесь в приложении и пройдите идентификацию, затем удалите ненужные устройства среди доверенных устройств, и у вас активируется телеграм-бот</p>"},{"id":"n_ru1_618295","title":"Приложение не работает/ Ограничения","reply":"<p class=\"leading-8 font-normal\" data-pm-slice=\"1 1 []\">Чтобы снять ограничения в приложении, вам необходимо пройти идентификацию. После того, как вы пройдете идентификацию, вы получите полный доступ ко всем функциям приложения.</p>"},{"id":"n_ru1_873543","title":"СМС с кодом подтверждения не приходит","reply":"<p>Уважаемый (имя пользователя) пожалуйста выполните следующие действия: <br/>1) убедитесь что номер телейфона введен корректно <br/>2) SIM-карта должна быть установлена в смартфон, если она установлена в кнопочный телефон смс не будет отправлен <br/>3) SIM-карта должна быть установлена в устройства с зарегестрированным IMEI в гос. реестре <br/>4) Если версия приложения устарела и не поддерживается пользователь должен обновить его <br/><span style=\"color: rgb(224, 62, 45);\">Оператор: Возможно аккаунт пользоваетля заблокирован проверьте статус регистрации в ARM -&gt; обратитесь  к супервайзеру </span></p>"},{"id":"n_ru1_873542","title":"Ошибка- Регистрация невозможна, заблокировано системой безопасности","reply":"<p>Уважаемый (имя пользователя) данная ошибка связана со способом подключения к сети, рекомендуем провести следующие действия:    <br/>1) Отключитесь от сети WI-FI и включите мобильный интернет <br/>2) Отключите VPN если он у вас подключен <br/>3) Уважаемый пользователь если вы не находитесь на территории Республики Узбекистан к сожалению вы не сможете пройти авторизацию.</p>"},{"id":"n_ru1_873541","title":"Как пройти авторизацию","reply":"<p>Откройте приложение CLICK super app -&gt; введите номер телефона -&gt; дождитесь СМС с кодом подвтерждения от \"Antifraud\" -&gt; введите код подтверждения из смс  </p>"},{"id":"n_ru1_617239","title":"Web (my.click.uz)","reply":"<p>Через браузер открываете страницу my.click.uz <span>Пройдите регистрацию вводя номер телефона и смс с кодом подтверждения. Далее установите пин код. </span></p>"},{"id":"n_ru1_617238","title":"Telegram bot","reply":"<p>(Отправьте смс шаблон \"Регистрация в telegram bot\") <br/><br/>Уважаемый (Имя пользователя) перейдите по ссылке в SMS который мы вам отправили. <br/><br/>[скриншот в оригинале скрипта]</p>"},{"id":"n_ru1_617237","title":"Click Up","reply":"<p>В первую очередь скачайте приложение через Google Play или app store. Пройдите регистрацию вводя номер телефона и смс с кодом подтверждения. Далее установите пин код. <br/><br/>Важно! <br/>SIM-карта (eSIM) с номером телефона, на который вы хотите открыть аккаунт в CLICK, должна быть установлена в устройстве, с которого вы выполняете вход по коду.</p>"},{"id":"n_ru1_617236","title":"USSD (*880#)","reply":"<p>Подключена ли у вас смс информирование ?</p>"},{"id":"n_ru1_617240","title":"Да","reply":"<p>Наберите *880<i>*</i>номер карты*Срок действие# после заходите обратно в меню USSD набрав *880# и установите CLICK Pin</p>"}],"edges":[{"parent":"n_ru1_612851","child":"n_ru1_612880"},{"parent":"n_ru1_612851","child":"n_ru1_612881"},{"parent":"n_ru1_612851","child":"n_ru1_612882"},{"parent":"n_ru1_612851","child":"n_ru1_612883"},{"parent":"n_ru1_612883","child":"n_ru1_613635"},{"parent":"n_ru1_612883","child":"n_ru1_613636"},{"parent":"n_ru1_612883","child":"n_ru1_613637"},{"parent":"n_ru1_612883","child":"n_ru1_613638"},{"parent":"n_ru1_613638","child":"n_ru1_612930"},{"parent":"n_ru1_612930","child":"n_ru1_612974"},{"parent":"n_ru1_613637","child":"n_ru1_612930"},{"parent":"n_ru1_613637","child":"n_ru1_613489"},{"parent":"n_ru1_613489","child":"n_ru1_612930"},{"parent":"n_ru1_613636","child":"n_ru1_616826"},{"parent":"n_ru1_613636","child":"n_ru1_616827"},{"parent":"n_ru1_616827","child":"n_ru1_612930"},{"parent":"n_ru1_616827","child":"n_ru1_616831"},{"parent":"n_ru1_616831","child":"n_ru1_612930"},{"parent":"n_ru1_616826","child":"n_ru1_616828"},{"parent":"n_ru1_616826","child":"n_ru1_616829"},{"parent":"n_ru1_616829","child":"n_ru1_612930"},{"parent":"n_ru1_616829","child":"n_ru1_613489"},{"parent":"n_ru1_616828","child":"n_ru1_616830"},{"parent":"n_ru1_616830","child":"n_ru1_612930"},{"parent":"n_ru1_616830","child":"n_ru1_613489"},{"parent":"n_ru1_613635","child":"n_ru1_612930"},{"parent":"n_ru1_613635","child":"n_ru1_613489"},{"parent":"n_ru1_612882","child":"n_ru1_616901"},{"parent":"n_ru1_612882","child":"n_ru1_616902"},{"parent":"n_ru1_612882","child":"n_ru1_616903"},{"parent":"n_ru1_612882","child":"n_ru1_613636"},{"parent":"n_ru1_616903","child":"n_ru1_616910"},{"parent":"n_ru1_616903","child":"n_ru1_616911"},{"parent":"n_ru1_616911","child":"n_ru1_612930"},{"parent":"n_ru1_616911","child":"n_ru1_613489"},{"parent":"n_ru1_616910","child":"n_ru1_612930"},{"parent":"n_ru1_616902","child":"n_ru1_616905"},{"parent":"n_ru1_616902","child":"n_ru1_616906"},{"parent":"n_ru1_616906","child":"n_ru1_612930"},{"parent":"n_ru1_616905","child":"n_ru1_613636"},{"parent":"n_ru1_616905","child":"n_ru1_616907"},{"parent":"n_ru1_616907","child":"n_ru1_616908"},{"parent":"n_ru1_616907","child":"n_ru1_616909"},{"parent":"n_ru1_616909","child":"n_ru1_612930"},{"parent":"n_ru1_616909","child":"n_ru1_613489"},{"parent":"n_ru1_616908","child":"n_ru1_612930"},{"parent":"n_ru1_616908","child":"n_ru1_613489"},{"parent":"n_ru1_616901","child":"n_ru1_616904"},{"parent":"n_ru1_616901","child":"n_ru1_612930"},{"parent":"n_ru1_616904","child":"n_ru1_613636"},{"parent":"n_ru1_612881","child":"n_ru1_613635"},{"parent":"n_ru1_612881","child":"n_ru1_613636"},{"parent":"n_ru1_612881","child":"n_ru1_613637"},{"parent":"n_ru1_612881","child":"n_ru1_613638"},{"parent":"n_ru1_612881","child":"n_ru1_890762"},{"parent":"n_ru1_612881","child":"n_ru1_897370"},{"parent":"n_ru1_612880","child":"n_ru1_612884"},{"parent":"n_ru1_612880","child":"n_ru1_612885"},{"parent":"n_ru1_612880","child":"n_ru1_612886"},{"parent":"n_ru1_612880","child":"n_ru1_615811"},{"parent":"n_ru1_612880","child":"n_ru1_617880"},{"parent":"n_ru1_617880","child":"n_ru1_617881"},{"parent":"n_ru1_617880","child":"n_ru1_617882"},{"parent":"n_ru1_617882","child":"n_ru1_617884"},{"parent":"n_ru1_617882","child":"n_ru1_617885"},{"parent":"n_ru1_617882","child":"n_ru1_617886"},{"parent":"n_ru1_617882","child":"n_ru1_617887"},{"parent":"n_ru1_617882","child":"n_ru1_617888"},{"parent":"n_ru1_617886","child":"n_ru1_612930"},{"parent":"n_ru1_617886","child":"n_ru1_613489"},{"parent":"n_ru1_617885","child":"n_ru1_612930"},{"parent":"n_ru1_617885","child":"n_ru1_613489"},{"parent":"n_ru1_617885","child":"n_ru1_613437"},{"parent":"n_ru1_613437","child":"n_ru1_612930"},{"parent":"n_ru1_617884","child":"n_ru1_612930"},{"parent":"n_ru1_617884","child":"n_ru1_613489"},{"parent":"n_ru1_617884","child":"n_ru1_613437"},{"parent":"n_ru1_617881","child":"n_ru1_612930"},{"parent":"n_ru1_617881","child":"n_ru1_613489"},{"parent":"n_ru1_615811","child":"n_ru1_613451"},{"parent":"n_ru1_615811","child":"n_ru1_615814"},{"parent":"n_ru1_615814","child":"n_ru1_612930"},{"parent":"n_ru1_615814","child":"n_ru1_613489"},{"parent":"n_ru1_613451","child":"n_ru1_612887"},{"parent":"n_ru1_613451","child":"n_ru1_612888"},{"parent":"n_ru1_612888","child":"n_ru1_612930"},{"parent":"n_ru1_612888","child":"n_ru1_613437"},{"parent":"n_ru1_612887","child":"n_ru1_612930"},{"parent":"n_ru1_612887","child":"n_ru1_613437"},{"parent":"n_ru1_612886","child":"n_ru1_612930"},{"parent":"n_ru1_612885","child":"n_ru1_612930"},{"parent":"n_ru1_612885","child":"n_ru1_613439"},{"parent":"n_ru1_613439","child":"n_ru1_613443"},{"parent":"n_ru1_613439","child":"n_ru1_613448"},{"parent":"n_ru1_613448","child":"n_ru1_613494"},{"parent":"n_ru1_613448","child":"n_ru1_612930"},{"parent":"n_ru1_613443","child":"n_ru1_613450"},{"parent":"n_ru1_613443","child":"n_ru1_613451"},{"parent":"n_ru1_613450","child":"n_ru1_612930"},{"parent":"n_ru1_613450","child":"n_ru1_613489"},{"parent":"n_ru1_612884","child":"n_ru1_612887"},{"parent":"n_ru1_612884","child":"n_ru1_612888"},{"parent":"n_ru1_612852","child":"n_ru1_617236"},{"parent":"n_ru1_612852","child":"n_ru1_617237"},{"parent":"n_ru1_612852","child":"n_ru1_617238"},{"parent":"n_ru1_612852","child":"n_ru1_617239"},{"parent":"n_ru1_612852","child":"n_ru1_873540"},{"parent":"n_ru1_873540","child":"n_ru1_873541"},{"parent":"n_ru1_873540","child":"n_ru1_873542"},{"parent":"n_ru1_873540","child":"n_ru1_873543"},{"parent":"n_ru1_873540","child":"n_ru1_618091"},{"parent":"n_ru1_618091","child":"n_ru1_618295"},{"parent":"n_ru1_618091","child":"n_ru1_848175"},{"parent":"n_ru1_618295","child":"n_ru1_612930"},{"parent":"n_ru1_617239","child":"n_ru1_612930"},{"parent":"n_ru1_617239","child":"n_ru1_613489"},{"parent":"n_ru1_617238","child":"n_ru1_612930"},{"parent":"n_ru1_617238","child":"n_ru1_613489"},{"parent":"n_ru1_617237","child":"n_ru1_612930"},{"parent":"n_ru1_617236","child":"n_ru1_617240"},{"parent":"n_ru1_617236","child":"n_ru1_612884"},{"parent":"n_ru1_617240","child":"n_ru1_612930"},{"parent":"n_ru1_612845","child":"n_ru1_612851"},{"parent":"n_ru1_612845","child":"n_ru1_612852"}]},{"name":"CLICK — Кошелёк (RU)","rootId":"n_ru2_612853","nodes":[{"id":"n_ru2_612853","title":"CLICK Кошелек","reply":"<p><span>CLICK-кошелёк — это </span><strong>виртуальный счёт, который можно пополнять, оплачивать с него различные товары и услуги и переводить с него средства на другие кошельки и карты. <br/><br/><span>CLICK-кошельки бывают 2 видов:</span><br/></strong></p>\n<ul>\n<li>Light – имеет некоторые ограничения - например, баланс данного кошелька не может превышать 5 БРВ в любое время (1 700 000 сумов, 1 БРВ = 340 000 сумов).</li>\n<li>Unlim – дает возможность хранить в CLICK-Кошельке – до 500 млн сумов. Кроме того, можно будет совершать переводы и производить оплаты суммой до 30 000 000 сум.</li>\n</ul>\n<p>Для получения статуса Unlim пользователю CLICK-кошелька необходимо пройти идентификацию. </p>"},{"id":"n_ru2_898613","title":"Обслуживание кошелька","reply":"<p>Изменения связаны с необходимостью поддержания стабильной и безопасной работы инфраструктуры, обслуживания неактивных кошельков и защиты данных пользователей.</p>"},{"id":"n_ru2_898622","title":"Как избежать списания?","reply":"<p>Для поддержания активности достаточно совершать любые операции с движением средств: оплату, перевод, пополнение или получение кешбэка.</p>"},{"id":"n_ru2_898621","title":"В каких ещё случаях применяется тариф?","reply":"<p>Тариф может применяться к кошелькам с остатком после удаления аккаунта и кошелькам в статусе досписания.</p>"},{"id":"n_ru2_898620","title":"На кого распространяется тариф?","reply":"<p>Тариф применяется только к кошелькам физических лиц и не распространяется на самозанятых и юридических лиц.</p>"},{"id":"n_ru2_898619","title":"Будут ли дальнейшие списания после обнуления?","reply":"<p>Нет. После полного списания остатка дальнейшие списания не производятся, пока баланс снова не станет положительным.</p>"},{"id":"n_ru2_898618","title":"Что будет если денег недостаточно?","reply":"<p>Если остаток меньше суммы тарифа, будет списан только доступный остаток без ухода в минус.</p>"},{"id":"n_ru2_898617","title":"Когда производится списание?","reply":"<p>Списание производится ежемесячно и только при наличии положительного остатка на кошельке.</p>"},{"id":"n_ru2_898616","title":"Какой размер тарифа?","reply":"<p>Размер тарифа составляет 1% от БРВ плюс 12% НДС сверх суммы тарифа.</p>"},{"id":"n_ru2_898615","title":"Какие операции считаются активностью кошелька?","reply":"<p>К операциям относятся: платежи и переводы, пополнение, начисление кешбэка, акционные зачисления и другие движения средств.</p>"},{"id":"n_ru2_898614","title":"Как воспользоваться услугой?","reply":"<p>Услуга применяется автоматически к неактивным электронным кошелькам физических лиц при отсутствии операций с движением средств в течение 180 календарных дней подряд.</p>"},{"id":"n_ru2_617254","title":"Как можно пополнить","reply":"<p>Пополнять кошелек вы можете с других карт через систему CLICK и Paynet, также пополнять кошелек можно наличными через инфокиоски Paynet. </p>"},{"id":"n_ru2_612930","title":"Понял","reply":"<p>Есть ли у вас еще вопросы ?</p>"},{"id":"n_ru2_612974","title":"Нет спасибо","reply":"<p>благодарим за обращение, ответьте на вопрос после звонка До свидание</p>"},{"id":"n_ru2_617253","title":"Куда можно тратить деньги в кошельке","reply":"<p>С Click кошелька вы можете оплатить за мобильные операторы, интернет провайдеры, коммунальные услуги ( газ, электроэнергия) так же сможете переводить средства на другой click кошелек ( комиссия не имеется) и даже можете перевести средства на карты подключенные к системе Click (комиссия- 1.5%). Можете так же совершать оплаты на местах.</p>"},{"id":"n_ru2_617275","title":"Как перевести на карту","reply":"<p>С CLICK кошелька можете перевести на карты Uzcard и Humo. Если вы пользуетесь USSD то сначала вам необходимо поставить кошелёк на основной счет и перевести вводя <i>*880*Номер карты*сумма# </i>а если через приложение то заходите на раздел переводы и введите туда номер карты или же если вы хотите перевести на свою карту то заходите в раздел между моими картами</p>"},{"id":"n_ru2_617276","title":"Я уже попробовал не получился","reply":"<p>Какую ошибку выдает вам ?</p>"},{"id":"n_ru2_617279","title":"Скоро будет доступно","reply":"<p>Данному поставщику с кошелька оплаты не проходят поэтому у вас выдает ошибку.</p>"},{"id":"n_ru2_617278","title":"Недостаточно средств","reply":"<p><span style=\"color: #ff0000;\">Проверяем баланс кошелька если там есть средства но выдает ошибку открываем в анкете раздел \" В Процессе\" если там есть повисший платеж то говорим: <span style=\"color: #000000;\">У вас есть платеж в обработке и поэтому сейчас у вас не получается оплатить/перевести. Ждите изменение статуса вашего раннего платежа и попробуйте заново. </span></span></p>"},{"id":"n_ru2_617283","title":"Когда изменится","reply":"<p>К сожалению точно не могу сказать, но передали ваши данные техническому отделу скором времени ваш платеж отменится либо пройдет успешно</p>"},{"id":"n_ru2_617277","title":"Перевод с кошелька на карту, не подключенной к CLICK, невозможен","reply":"<p>С CLICK кошелька можно вывести средства только на карты привязанные к системе CLICK.</p>"},{"id":"n_ru2_617281","title":"Карта подключена","reply":"<p>Продиктуйте номер телефона подключенной к системе CLICK и последние 4 цифры карты</p>"},{"id":"n_ru2_617282","title":"Номер клиента","reply":"<p><span style=\"color: #ff0000;\">Проверяем действительно ли подлючена карта на этот номер если да то просим еще раз попробовать. Если не подключена: </span><span style=\"color: #ff0000;\">На этом номере нет такой карты. Подключите карту и попробуйте перевести заново</span></p>"},{"id":"n_ru2_613489","title":"Если не получиться","reply":"<p>Если проделанные действия не дали положительного результата, пожалуйста снимите видео с другого устройства и отправьте его нам при помощи нашего телеграмм бота @clickuz. Наши специалисты проведут проверку.</p>"},{"id":"n_ru2_617252","title":"удалить кошелёк","reply":"<p><span>Необходимо нажать на кнопку «Закрыть кошелёк». Система предложит потратить остаток кошелька, при наличии такового, на оплату, пожертвование или забрать остаток переводя их на карты</span></p>"},{"id":"n_ru2_617251","title":"Не активен","reply":"<p>Попробовали вы ввести свою дату рождения для активации</p>"},{"id":"n_ru2_617268","title":"Да, но не получилось","reply":"<p><span style=\"color: #ff0000; font-family: 'arial black', 'avant garde';\"><span style=\"color: #000000;\">При создании кошелька вы ввели рандомную дату по этому у вас данный момент не получается активировать. я принял(а) заявку и в течении 5 минут с вами свяжемся</span><br/><br/></span></p>\n<p><span style=\"color: #000000; font-family: 'arial black', 'avant garde';\"></span></p>"},{"id":"n_ru2_617272","title":"Premium кошелёк","reply":"<p><span style=\"color: #ff0000;\">Делаем исход и спрашиваем дату рождения клиента, серию паспорта и последние 4 цифры ПИНФЛ. После отправляем данные в группу \"СТП Рабочая группа\" и после отвечаем клиенту:</span> Вводя свою дату рождения можете активировать кошелёк</p>"},{"id":"n_ru2_617271","title":"Light кошелёк","reply":"<p>Делаем исход и спрашиваем дату рождения клиента и серию паспорта. После отправим все эти данные в группу \"СТП Рабочая группа\" и продиктуем клиенту ту дату которые отправили в группе</p>"},{"id":"n_ru2_617267","title":"Нет","reply":"<p>Нажмите на кошелёк и выберите кнопку активировать кошёлек. Затем введите свою дату рождения и если вы при создании кошелька ввели свою дату рождения то у вас получиться. Если выдаст ошибку что дата не совпадает то позвоните нам мы вам поможем вам активировать</p>"},{"id":"n_ru2_617250","title":"Как открыть кошелёк ?","reply":"<p><span>В приложении CLICK  Up пролистайте свои карты, если таковые есть, до конца и нажмите на «Добавить карту». Также можно перейти в раздел «Мои карты» и там выбрать опцию «Добавление карты». Из предложенных вариантов выберите CLICK-Кошелёк. После этого вам будет необходимо указать свой день рождения и, ознакомившись с условиями оферты, выразить согласие с ними. Просим иметь в виду, что необходимо указывать актуальную дату рождения, так как она будет необходима для восстановления кошелька при утере к нему доступа. По умолчанию, пользователям CLICK открывается кошелёк статуса Light.</span></p>"},{"id":"n_ru2_617783","title":"как получить кошелек премиум","reply":"<p>Для этого вам необходимо перейти идентификацию личности в нашем приложении click up</p>"}],"edges":[{"parent":"n_ru2_612853","child":"n_ru2_617250"},{"parent":"n_ru2_612853","child":"n_ru2_617251"},{"parent":"n_ru2_612853","child":"n_ru2_617252"},{"parent":"n_ru2_612853","child":"n_ru2_617253"},{"parent":"n_ru2_612853","child":"n_ru2_617254"},{"parent":"n_ru2_612853","child":"n_ru2_898613"},{"parent":"n_ru2_898613","child":"n_ru2_898614"},{"parent":"n_ru2_898613","child":"n_ru2_898615"},{"parent":"n_ru2_898613","child":"n_ru2_898616"},{"parent":"n_ru2_898613","child":"n_ru2_898617"},{"parent":"n_ru2_898613","child":"n_ru2_898618"},{"parent":"n_ru2_898613","child":"n_ru2_898619"},{"parent":"n_ru2_898613","child":"n_ru2_898620"},{"parent":"n_ru2_898613","child":"n_ru2_898621"},{"parent":"n_ru2_898613","child":"n_ru2_898622"},{"parent":"n_ru2_617254","child":"n_ru2_612930"},{"parent":"n_ru2_612930","child":"n_ru2_612974"},{"parent":"n_ru2_617253","child":"n_ru2_612930"},{"parent":"n_ru2_617253","child":"n_ru2_617275"},{"parent":"n_ru2_617275","child":"n_ru2_612930"},{"parent":"n_ru2_617275","child":"n_ru2_617276"},{"parent":"n_ru2_617276","child":"n_ru2_617277"},{"parent":"n_ru2_617276","child":"n_ru2_617278"},{"parent":"n_ru2_617276","child":"n_ru2_617279"},{"parent":"n_ru2_617279","child":"n_ru2_612930"},{"parent":"n_ru2_617278","child":"n_ru2_617283"},{"parent":"n_ru2_617283","child":"n_ru2_612930"},{"parent":"n_ru2_617277","child":"n_ru2_612930"},{"parent":"n_ru2_617277","child":"n_ru2_617281"},{"parent":"n_ru2_617281","child":"n_ru2_617282"},{"parent":"n_ru2_617282","child":"n_ru2_612930"},{"parent":"n_ru2_617282","child":"n_ru2_613489"},{"parent":"n_ru2_613489","child":"n_ru2_612930"},{"parent":"n_ru2_617252","child":"n_ru2_612930"},{"parent":"n_ru2_617251","child":"n_ru2_617267"},{"parent":"n_ru2_617251","child":"n_ru2_617268"},{"parent":"n_ru2_617268","child":"n_ru2_617271"},{"parent":"n_ru2_617268","child":"n_ru2_617272"},{"parent":"n_ru2_617272","child":"n_ru2_612930"},{"parent":"n_ru2_617271","child":"n_ru2_612930"},{"parent":"n_ru2_617267","child":"n_ru2_612930"},{"parent":"n_ru2_617250","child":"n_ru2_617783"},{"parent":"n_ru2_617783","child":"n_ru2_612930"}]},{"name":"CLICK — Ulanish xizmatlari (UZ)","rootId":"n_uz1_652425","nodes":[{"id":"n_uz1_652425","title":"Suhbat boshlanishi","reply":"<p>Assalomu alaykum. Operator (ism), sizga qanday yordam bera olaman ? </p>"},{"id":"n_uz1_652426","title":"Ulanish (xatolik)","reply":"<p>Aynan qaysi interfeysimiz orqali ro'yxatdan o'tmoqchisiz ? </p>"},{"id":"n_uz1_897371","title":"Sim karta","reply":"<p>[скриншот в оригинале скрипта]<br/><br/><br/>CLICK’da akkaunt ochmoqchi bo‘lgan telefon raqamiga ulangan SIM-karta (eSIM), kod orqali kirishni amalga oshirayotgan qurilmaga o‘rnatilgan bo‘lishi kerak.</p>"},{"id":"n_uz1_652438","title":"WEB","reply":"<p>Aynan qanday xatolik yuz bermoqda ? </p>"},{"id":"n_uz1_652458","title":"Pin ornatolmadim","reply":"<p>Tizim oson pin kodlarni qabul qilmaydi ya'ni bir xil sonlardan iborat (masalan 11111 55555) yoki ketma ket sonlardan iborat pin kodni qabul qilmaydi (masalan 12345 87654) </p>"},{"id":"n_uz1_652444","title":"Tushunarli","reply":"<p>Yana savollaringiz bormi ? </p>"},{"id":"n_uz1_652445","title":"Yo","reply":"<p>Murojaatingiz uchun raxmat. Suhbatdan keyingi savolga javob qoldirishingizni so'raymiz. Salomat bo'ling</p>"},{"id":"n_uz1_652457","title":"Kod kelmadi","reply":"<p><span style=\"font-family: 'arial black', 'avant garde'; color: #ff0000;\">ARM anketadan sms tekshirib ko'ring:</span><br/><span style=\"color: #ff0000; font-family: 'arial black', 'avant garde';\">\"Operator-OK/Client-OK\"</span> -- Biz tomondan smslar siz yuborilgan qaytadan urunib ko'ring yoki smslaringizni tekshirib ko'ring balki click smslari qora ro'yxatda emasmi ?<br/><span style=\"font-family: 'arial black', 'avant garde'; color: #ff0000;\">\"Operator-OK/Client-Err\"  \"стп рабочая группа\" ga yuboramiz va texnik hodimlarni belgilaymiz. </span></p>"},{"id":"n_uz1_652452","title":"Agar bo'lmasachi ?","reply":"<p>Agarda sizda o'zgarish bo'lmasa xatolik boshqa bir qurilma orqali videoga oling va bizga @clickuz botimiz orqali yuboring. Mutaxassislarimiz tekshirib o'tishadi</p>"},{"id":"n_uz1_652456","title":"Xavfsizlik tizimi tomonidan bloklandi","reply":"<p>Siz O'zbekiston Respublikasi hududidamisiz ? </p>"},{"id":"n_uz1_652462","title":"Yo'q","reply":"<p>Siz faqatgina O'zbekiston Respublikasi hududidangina Click Up ilovamizga ro'yxatdan o'ta olasiz. Agarda sim karta o'zingiz bilan bo'lsa Rouming xizmatidan foydalanib kirishingiz mumkin</p>"},{"id":"n_uz1_652466","title":"Rouming qanday yoqish mumkin","reply":"<p>Afsuski bu savol bilan siz mobil operatoringizga murojaat qilishingiz lozim. </p>"},{"id":"n_uz1_652461","title":"Xa","reply":"<p>Sizda Vpn yoqilmaganmi ? </p>"},{"id":"n_uz1_652464","title":"Yoqilgan","reply":"<p>Sizning internetingiz ip larini O'zbekistondan tashqari ko'rsatgani sabab sizni tizim ilovaga o'tkazmaydi. Vpn o'chirib qaytadan urunib ko'ring</p>"},{"id":"n_uz1_652463","title":"Yo'q","reply":"<p>Siz WiFi orqali kirishga urunyapsizmi ? </p>"},{"id":"n_uz1_652465","title":"Xa","reply":"<p>WiFi ni o'chirib o'zingizning mobil internetingiz orqali ro'yxatdan o'ting xatoliklar bo'lmaydi</p>"},{"id":"n_uz1_652455","title":"Profil bloklandi","reply":"<p><span style=\"color: #ff0000;\"><strong>ARM anketada \"Сессии CLICK Evolution\" ochamiz va tekshiramiz. Agarda \"Заблокирован\" deb yozilgan bo'lsa mijozdan telefon qurilmasini modelini so'raymiz va \"СТП Рабочая группа\" ga yuboramiz</strong></span>.</p>\n<p>CLICK Pin kodni bir necha marotaba noto'g'ri kiritganingiz sababli sizda ilova bloklangan. Hozir sizdan blokni yechamiz taxminan 5 daqiqa ichida qayta urunib ko'ring. </p>"},{"id":"n_uz1_652437","title":"Telegram bot","reply":"<p>Aynan qanday xatolik yuz bermoqda ?</p>"},{"id":"n_uz1_652469","title":"Pin kod o'rnatib bo'lmadi","reply":"<p>Pin kodni aynan qanday kiritdingiz? Botning o'zida klaviaturangiz orqali kiritdingizmi yoki botni o'zi taqdim etgan tugmalar orqalimi ? </p>"},{"id":"n_uz1_652477","title":"Botning tugmalari orqali","reply":"<p><span>Tizim oson pin kodlarni qabul qilmaydi. Bir xil sonlardan yoki ketma ket sonlardan iborat pin kodlarni o'rnatmang. Masalan: 55555 12345 98765.</span></p>"},{"id":"n_uz1_652476","title":"Klaviatura orqali","reply":"<p>Pin kodni kiritish uchun sizga bot taqdim etgan tayyor tugmalar orqali kiritishingiz lozim. </p>"},{"id":"n_uz1_652468","title":"Kodni kiritdim hech nima o'zgarmadi","reply":"<p>Sms kodni aynan qayerga kiritdingiz ? <br/>Havola orqali bizning saytga o'tibmi yoki botni o'zigami ? </p>"},{"id":"n_uz1_652472","title":"Telegram botni o'ziga","reply":"<p>Sms kodni tasdiqlash uchun siz \"Kodni kiritish\" tugmasi orqali havolaga o'tib shu yerda kiritishingiz lozim </p>"},{"id":"n_uz1_652471","title":"Saytga","reply":"<p>Aynan qanday xatolik yuz bermoqda ?</p>"},{"id":"n_uz1_652473","title":"Sayt umuman ochilmadi qizil yozuvlarda xatolik","reply":"<p>Siz aynan qaysi brauzer orqali havola ochdingiz ? </p>"},{"id":"n_uz1_652475","title":"Opera, explorer, Fire fox, uc browser и тд","reply":"<p>Havolani Google Chrome brauzeri yoki Iphone qurilmalarida Safari brauzeri orqali oching. </p>"},{"id":"n_uz1_652474","title":"Google Chrome или Safari","reply":"<p>Brauzerning keshini tozalab qaytadan urunib ko'ring</p>"},{"id":"n_uz1_652467","title":"Telefon raqam qabul qilmadi","reply":"<p>Telegram botimizga ro'yxatdan o'tish uchun avvalo sizning telegram akkauntingiz va Click akkauntingiz raqamlari bir biriga mos kelishi lozim.  Agarda raqam mos kelmasa u holda Click akkaunt ochilgan raqamdan telegram akkaunt ochishingiz lozim.</p>"},{"id":"n_uz1_652470","title":"Menda bir xil raqam","reply":"<p>Xatolikni batafsil ta'riflab bera olasizmi ? </p>"},{"id":"n_uz1_652436","title":"CLICK evolution","reply":"<p>Aynan qanday xatolik yuz bermoqda ?</p>"},{"id":"n_uz1_890763","title":"Qurilmaning zaiflik aniqlandi","reply":"<p data-end=\"79\" data-start=\"0\">[скриншот в оригинале скрипта]<br/>Qurilmangizda root-dostup (tizimga kengaytirilgan kirish huquqlari) aniqlangan.</p>\n<p data-end=\"329\" data-start=\"81\">Bunday huquqlar tizim sozlamalarini o‘zgartirish va qurilma ishlashiga ta’sir qilish imkonini beradi, bu esa xavfsizlik darajasini pasaytirishi mumkin. Shu sababli Click ilovasi root-dostup faol bo‘lgan qurilmalarda ishlashni qo‘llab-quvvatlamaydi.</p>\n<p data-end=\"457\" data-start=\"331\">Ilovadan xavfsiz foydalanish uchun root-dostupni o‘chirib qo‘yish yoki bunday huquqlarsiz boshqa qurilmadan foydalanish zarur.</p>\n<p data-end=\"650\" data-start=\"459\">E’tibor bering, root-dostupni olib tashlash usuli uning qanday o‘rnatilganiga bog‘liq. Noto‘g‘ri harakatlar qurilma ishlashida nosozliklarga yoki ma’lumotlar yo‘qolishiga olib kelishi mumkin.</p>\n<p data-end=\"839\" data-start=\"652\">Shu munosabat bilan root-dostupni xavfsiz tarzda olib tashlash va qurilmaning to‘g‘ri ishlashini tiklash uchun servis markaziga yoki malakali mutaxassisga murojaat qilish tavsiya etiladi.</p>\n<p data-end=\"975\" data-start=\"841\">Muammo bartaraf etilgunga qadar siz CLICK tizimi bilan muqobil usullar orqali ishlashingiz mumkin (Telegram bot @clickuz, USSD *880#).</p>\n<p data-end=\"1144\" data-is-last-node=\"\" data-is-only-node=\"\" data-start=\"977\"><span style=\"color: rgb(22, 145, 121);\">Operator uchun:</span> foydalanuvchiga Telegram’da @clickuz orqali ro‘yxatdan o‘tish havolasini yuborish yoki USSD orqali zarur amallarni bajarish bo‘yicha yo‘riqnoma berish.</p>"},{"id":"n_uz1_652435","title":"USSD (*880#)","reply":"<p>Aynan qanday xatolik yuz bermoqda ?</p>"},{"id":"n_uz1_652517","title":"Karta qo'sha olmayapman","reply":"<p>Aynan qaysi ketma ketlikda kiritdingiz ? Menyular orqalimi yoki registratsiya qisqa kodi bilanmi ? </p>"},{"id":"n_uz1_652519","title":"Qisqa kod orqali","reply":"<p><strong><span style=\"color: #ff0000;\">Telefon raqamini kopirovat qilib ARM anketada \"Monitoring\" bo'limiga kiramiz va \"История регистрации карт\" bo'limiga raqammi kiritamiz. </span></strong></p>"},{"id":"n_uz1_652524","title":"Agar 1B процессе","reply":"<p>Karta ma'lumotlarini olishda va ro'yxatdan o'tishda kichik uzilishlar mavjud. Keyinroq qaytadan urunib ko'ring</p>"},{"id":"n_uz1_652523","title":"Agar 1[05] ошибка","reply":"<p>Sizning kartangiz Humo bo'lgani uchun USSD orqali ro'yxatdan o'tishda uzilishlar bo'lishi mumkin. Kartani Click Up ilovamiz orqali qo'shib ko'rishga harakat qiling</p>"},{"id":"n_uz1_652522","title":"Agar Срок неверный","reply":"<p>Kartaning amal qilish muddatini noto'g'ri kiritdingiz. Karta ma'lumotlarini tekshirib qaytadan urunib ko'ring</p>"},{"id":"n_uz1_652521","title":"Agar SMS инфо не совпадает","reply":"<p>Sms xabarnoma xizmati boshqa raqamga yoqilgan. Sms xabarnoma xizmatini bank (humo) yoki bankomat (Uzcard) orqali o'zgartirishingiz mumkin. </p>"},{"id":"n_uz1_652446","title":"Siz yoqib bera olmaysizmi ?","reply":"<p>Afsuski yo'q. Sms xabarnomani faqatgina bank orqali yoqish mumkin.</p>"},{"id":"n_uz1_652520","title":"Agar SMS инфо \"0\"","reply":"<p>Sizda sms xabarnoma yoqilmagan. Sms xabarnoma xizmatini bank(Humo) yoki bankomat (Uzcard) orqali yoqishingiz mumkin. </p>"},{"id":"n_uz1_652518","title":"Menyular orqali ketma ket","reply":"<p>Ro'yxatdan o'tish uchun qulay qisqa kodimiz orqali foydalaning. Buning uchun quyidagicha tering: <span>*880*0*karta raqami*amal qilish muddati#</span></p>\n<p><span><br/>(\"Регистрация USSD\" sms shablon jo'natish kerak)</span></p>"},{"id":"n_uz1_652459","title":"Sizda ulangan kartalar mavjud emas","reply":"<p>Sizda sms xabarnoma yoqilganmi ? </p>"},{"id":"n_uz1_652460","title":"Xa","reply":"<p>registratsiya kodini qayta kiritib ko'ring</p>"},{"id":"n_uz1_652451","title":"Yo'q","reply":"<p>Sizning kartangiz Uzcardmi yoki HUMO ?</p>"},{"id":"n_uz1_652443","title":"Humo","reply":"<p>Ulanish uchun sms xabarnomani bank orqali yoqish shart</p>"},{"id":"n_uz1_652812","title":"Siz yoqib bera olmaysizmi ?","reply":"<p>Afsuski yo'q. Sms xabarnoma faqatgina bank orqali yoqiladi.</p>"},{"id":"n_uz1_652442","title":"Uzcard","reply":"<p>Ulanish uchun sms xabarnoma xizmati yoqilgan bo'lishi shart ! Sms xabarnoma yoqilgandan keyn ulanish mumkin</p>"},{"id":"n_uz1_652441","title":"Vaqtinchalik mumkin emas","reply":"<p>Bu turdagi kartani click tizimiga ulash imkoni yo'q</p>"},{"id":"n_uz1_652440","title":"MMI xatolik","reply":"<p>Ma'lumotlarni tezroq kiritishga harakat qiling, chunki har bir USSD menyusidagi ko'rsatmalar uchun 15 soniya taqdim etiladi yoki qisqa kod orqali ro'yxatdan o'tishingiz mumkin <span>*880*0*karta raqami*amal qilish muddati#</span></p>"},{"id":"n_uz1_652447","title":"Tez kiritdim baribir xatolik","reply":"<p>Qaysi mobil operatoridan foydalanasiz ?</p>"},{"id":"n_uz1_652449","title":"Humans, Perfectum, Uzmobile (CDMA)","reply":"<p>Ushbu mobil operatorlarida USSD xizmati bo'lmagani sababli sizda xatolik yuz bermoqda. Siz bizning online interfeyslarimiz orqali foydalanishingiz mumkin</p>"},{"id":"n_uz1_652453","title":"Online interfeyslarga qanday ulanish mumkin ?","reply":"<div class=\"text-sm text-gray-700 bg-gray-50 p-4 rounded-lg text-center\">Реплика менеджера не указана!</div>"},{"id":"n_uz1_652448","title":"Beeline, Ucell, MobiUz, Uzmobile(Gsm)","reply":"<p>Sizning telefon qurilmangiz koreyaniki emasmi ? </p>"},{"id":"n_uz1_652450","title":"Xa koreya","reply":"<p>Muammo shundaki koreyada ishlab chiqarilgan qurilmalarda USSD orqali foydalanishda xatoliklar yuz beradi. Sim kartangizni boshqa qurilmaga o'rnatib qayta tekshirib ko'ring</p>"},{"id":"n_uz1_652439","title":"Sms xabarnoma ulanmagan","reply":"<p>Sizning kartangiz Uzcardmi yoki Humo ? </p>"},{"id":"n_uz1_652427","title":"Ulanish (yangi)","reply":"<p>Aynan qaysi interfeysimiz ro'yxatdan o'tmoqchisiz ?</p>"},{"id":"n_uz1_873544","title":"CLICK super app (авторизация)","reply":"<p>avtorizatsiya - bu allaqachon mavjud akkauntga kirish jarayoni <br/><br/>[скриншот в оригинале скрипта]</p>"},{"id":"n_uz1_652549","title":"Cheklov","reply":"<p>Aynan qanday xatolik yuz bermoqda ?</p>\n<p>Cheklov tushishi sabablari:</p>\n<p>1. Yangi qurilmada ro'yxatdan o'tganda.<br/>2. Ilovani qayta o'rnatganda<br/>3. VPN orqali ilovaga kirish bo'lganda. </p>"},{"id":"n_uz1_750042","title":"Telegram bot cheklov","reply":"<p>Telegram botga cheklov tushishining sababi Click superapp ilovasiga kirgan qurilmalar orasida shubhali sessiya aniqlangan. Hozirda cheklovlarni yechish uchun ilovada ro'yxatdan o'ting va identifikatsiyan o'ting, so'ngra ishonchli qurilmalar orasidan kerakmas qurilmalarni o'chirib yuboring va sizda telegram bot faol holatga keladi </p>"},{"id":"n_uz1_749998","title":"Identifikatsiya o'chirish","reply":"<p>identifikatsiya ma'lumotlarini o'chirish uchun bizning rasmiy pochta manzilimizga ariza bilan murojaat qilishingiz lozim. Arizani A4 formatdagi varoqqa yozib ushbu ariza pochta orqali yuborasiz</p>\n<p>«CLICK» AJ Bosh direktori<br/>Rustamov U.Sh.ga<br/>______________________ dan<br/>(to'liq F.I.Sh)</p>\n<p>Ariza<br/>Sizdan +998_______________ raqamli akkauntimdagi identifikatsiya ma'lumotlarini o'chirishingizni so'rayman.<br/>Pasport ma'lumotlarim:<br/>Seriya___________________<br/>Kim tomonidan berilgan</p>\n<p>Ilova:</p>\n<p>1) Pasport - skaner nusxasi<br/>2) Qayta aloqalar uchun raqam<br/>3) Mobil operator bilan shartnomaning nusxasi<br/>2024 y. _______«»</p>\n<p>Elektron pochtamiz manzili: <a href=\"mailto:info@click.uz\">info@click.uz</a></p>\n<p>Mobil operator bilan shartnoma firibgarlik harakatlaridan himoyalanish uchun zarur. Ushbu shartnomani siz mobil operatoringizning shaxsiy kabineti orqali ham olishingiz mumkin. </p>"},{"id":"n_uz1_655386","title":"Tushunarli","reply":"<p>Yana qandaydir savollaringiz bormi?</p>"},{"id":"n_uz1_655387","title":"Yo`q, raxmat","reply":"<p>Murojaatingiz uchun raxmat. Salomat bo'ling</p>"},{"id":"n_uz1_652555","title":"Identifikatsiyada xatolik","reply":"<p>Aynan qanday xatolik chiqarib bermoqda ilova?</p>"},{"id":"n_uz1_652560","title":"Kunlik limit oshib ketgan","reply":"<p>Bir kun ichida 10 marotabadan ziyod urinishlar soni bo`lganligi sabab, Sizda shunday xatolik chiqmoqda. Ertaga yana urinib ko`rishingiz mumkin </p>"},{"id":"n_uz1_652559","title":"Yuzni tanimayabdi","reply":"<p>Identifikatsiyadan o`tayotganda xona yoruqligi hamda kamerani tiniqligiga ishoch xosil qilib oling, so`ngra belgilangan xoshiyaga yuzingizni aniq tuting</p>"},{"id":"n_uz1_652556","title":"Pasport ma`lumotlarini qabul qilmayabdi","reply":"<p>Siz O`zbekiston Respublikasining fuqarosimisiz?</p>"},{"id":"n_uz1_652558","title":"Yo`q","reply":"<p>Afsuski identifikatsiyadan faqatgina O'zbekiston Respublikasi fuqarolarigina o'ta oladi. </p>"},{"id":"n_uz1_652557","title":"Ha","reply":"<p>Sizning passport ma'lumotlaringiz MYID orqali tekshiriladi. Ma'lumotlar to'g'riligini tekshiring va qaytadan urunib ko'ring</p>"},{"id":"n_uz1_652553","title":"Identifikatsiyadan qanday o`tsam bo`ladi?","reply":"<p>Identifikatsiyani Siz bizning Click Up ilovamiz orqali o`tib olishingiz mumkin. Buning uchun Sozlamalar - Shaxsiy ma`lumotlar bo`limlarini ketma-ketlikda tanlaysiz. Shaxsizngizni tasdiqlashning 2ta yo`li bor. (1) Pasport seriya va raqamini kiritasiz, so`ngra kamera yongach, ekranda paydo bo`lgan xoshiyaga yuzingizni to`g`irlaysiz. (2) JShShIR ni kiritasiz, so`ngra <span>ekranda paydo bo`lgan xoshiyaga yuzingizni to`g`irlaysiz, kamerani yongach</span> <br/><br/>Ma`lumotlar tasdiqlanganidan so`ng Siz Identifikatsiyadan to`liq o`tgan hisoblanasiz.</p>"},{"id":"n_uz1_655097","title":"Ilova ishlamadi, cheklovlar","reply":"<p>Ilovadagi cheklovlarni olish uchun identifikatsiyadan o'tishingiz lozim. Identifikatsiyadan o'tganingizdan so'ng sizda ilovaning barcha funksionali to'liq ishga tushadi</p>"},{"id":"n_uz1_873547","title":"Tasdiqlash kodlik SMS kelmayapti","reply":"<p>Hurmatli (foydalanuvchi nomi) <br/>1) telefon raqami to‘g‘ri kiritilganligiga ishonch hosil qiling <br/>2) SIM karta smartfonga o‘rnatilgan bo‘lishi kerak, agar u tugmachali telefonga o‘rnatilgan bo‘lsa, SMS yuborilmaydi <br/>3) SIM karta IMEI davlat reyestrida ro‘yxatdan o‘tgan qurilmaga o‘rnatilgan bo‘lishi kerak <br/>4) Agar ilovaning versiyasi eskirgan va qo‘llab-quvvatlanmasa, foydalanuvchi uni yangilashi kerak <br/><br/><span style=\"color: rgb(224, 62, 45);\">Оператор: Возможно аккаунт пользоваетля заблокирован проверьте статус регистрации в ARM -&gt; обратитесь  к супервайзеру</span></p>"},{"id":"n_uz1_873546","title":"Xatolik! Регистрация невозможна, заблокировано системой безопасности","reply":"<p>Hurmatli (foydalanuvchi ismi) bu xato tarmoqqa ulanish usuli bilan bog‘liq, quyidagi amallarni bajarishni tavsiya etamiz: <br/>1) WI-FI tarmog‘idan uziling va mobil internetni yoqing <br/>2) Agar sizda VPN ulangan bo‘lsa, uni o‘chiring <br/>3) Hurmatli foydalanuvchi, agar siz O‘zbekiston Respublikasi hududida bo‘lmasangiz, afsuski, avtorizatsiyadan o‘ta olmaysiz.</p>"},{"id":"n_uz1_873545","title":"Qanday qilib avtorizatsiyadan o`tish mumkin","reply":"<p>CLICK super app ilovasiga kiring -&gt; telefon raqamini kiriting -&gt; \"Antifraud\"dan tasdiqlash ko`dlik SMSni kuting -&gt; SMS’dagitasdiqlash ko`dni kiriting</p>"},{"id":"n_uz1_652481","title":"Web (my.click.uz)","reply":"<p>Brauzer orqali my.click.uz saytini oching. Telefon raqamingizni va sms kodni kiriting. So'ngra click pin o'rnating<span> </span></p>"},{"id":"n_uz1_652480","title":"Telegram bot","reply":"<p>(Sms shablon yuboramiz\"Регистрация в telegram bot\") <br/><br/></p>\n<p class=\"leading-8 font-normal\" data-pm-slice=\"1 1 []\">Hurmatli (Foydalanuvchi ismi) biz sizga yuborgan SMSdagi havola orqalik o`ting.<br/><br/>[скриншот в оригинале скрипта]</p>"},{"id":"n_uz1_652479","title":"Click Up","reply":"<p>Birinchi navbatda Google Play yoki App store orqali ilovani yuklab oling. Telefon raqamingizni va sms kodni kiritib ro'yxatdan o'ting va Click pin o'rnating.</p>"},{"id":"n_uz1_652478","title":"USSD (*880#)","reply":"<p>Sizda sms xabarnoma yoqilganmi ? </p>"},{"id":"n_uz1_652482","title":"Xa","reply":"<p>Ro'yxatdan o'tish uchun *880*0*karta raqami*amal qilish muddati# ni tering va shundan so'ng *880# ni qayta terib Click pin o'rnating</p>"}],"edges":[{"parent":"n_uz1_652426","child":"n_uz1_652435"},{"parent":"n_uz1_652426","child":"n_uz1_652436"},{"parent":"n_uz1_652426","child":"n_uz1_652437"},{"parent":"n_uz1_652426","child":"n_uz1_652438"},{"parent":"n_uz1_652426","child":"n_uz1_897371"},{"parent":"n_uz1_652438","child":"n_uz1_652455"},{"parent":"n_uz1_652438","child":"n_uz1_652456"},{"parent":"n_uz1_652438","child":"n_uz1_652457"},{"parent":"n_uz1_652438","child":"n_uz1_652458"},{"parent":"n_uz1_652458","child":"n_uz1_652444"},{"parent":"n_uz1_652444","child":"n_uz1_652445"},{"parent":"n_uz1_652457","child":"n_uz1_652444"},{"parent":"n_uz1_652457","child":"n_uz1_652452"},{"parent":"n_uz1_652452","child":"n_uz1_652444"},{"parent":"n_uz1_652456","child":"n_uz1_652461"},{"parent":"n_uz1_652456","child":"n_uz1_652462"},{"parent":"n_uz1_652462","child":"n_uz1_652444"},{"parent":"n_uz1_652462","child":"n_uz1_652466"},{"parent":"n_uz1_652466","child":"n_uz1_652444"},{"parent":"n_uz1_652461","child":"n_uz1_652463"},{"parent":"n_uz1_652461","child":"n_uz1_652464"},{"parent":"n_uz1_652464","child":"n_uz1_652444"},{"parent":"n_uz1_652464","child":"n_uz1_652452"},{"parent":"n_uz1_652463","child":"n_uz1_652465"},{"parent":"n_uz1_652465","child":"n_uz1_652444"},{"parent":"n_uz1_652465","child":"n_uz1_652452"},{"parent":"n_uz1_652455","child":"n_uz1_652444"},{"parent":"n_uz1_652455","child":"n_uz1_652452"},{"parent":"n_uz1_652437","child":"n_uz1_652467"},{"parent":"n_uz1_652437","child":"n_uz1_652468"},{"parent":"n_uz1_652437","child":"n_uz1_652469"},{"parent":"n_uz1_652437","child":"n_uz1_652456"},{"parent":"n_uz1_652469","child":"n_uz1_652476"},{"parent":"n_uz1_652469","child":"n_uz1_652477"},{"parent":"n_uz1_652477","child":"n_uz1_652444"},{"parent":"n_uz1_652476","child":"n_uz1_652444"},{"parent":"n_uz1_652468","child":"n_uz1_652471"},{"parent":"n_uz1_652468","child":"n_uz1_652472"},{"parent":"n_uz1_652472","child":"n_uz1_652444"},{"parent":"n_uz1_652471","child":"n_uz1_652456"},{"parent":"n_uz1_652471","child":"n_uz1_652473"},{"parent":"n_uz1_652473","child":"n_uz1_652474"},{"parent":"n_uz1_652473","child":"n_uz1_652475"},{"parent":"n_uz1_652475","child":"n_uz1_652444"},{"parent":"n_uz1_652474","child":"n_uz1_652444"},{"parent":"n_uz1_652467","child":"n_uz1_652470"},{"parent":"n_uz1_652467","child":"n_uz1_652444"},{"parent":"n_uz1_652470","child":"n_uz1_652456"},{"parent":"n_uz1_652436","child":"n_uz1_652455"},{"parent":"n_uz1_652436","child":"n_uz1_652456"},{"parent":"n_uz1_652436","child":"n_uz1_652457"},{"parent":"n_uz1_652436","child":"n_uz1_652458"},{"parent":"n_uz1_652436","child":"n_uz1_890763"},{"parent":"n_uz1_652435","child":"n_uz1_652439"},{"parent":"n_uz1_652435","child":"n_uz1_652440"},{"parent":"n_uz1_652435","child":"n_uz1_652441"},{"parent":"n_uz1_652435","child":"n_uz1_652459"},{"parent":"n_uz1_652435","child":"n_uz1_652517"},{"parent":"n_uz1_652517","child":"n_uz1_652518"},{"parent":"n_uz1_652517","child":"n_uz1_652519"},{"parent":"n_uz1_652519","child":"n_uz1_652520"},{"parent":"n_uz1_652519","child":"n_uz1_652521"},{"parent":"n_uz1_652519","child":"n_uz1_652522"},{"parent":"n_uz1_652519","child":"n_uz1_652523"},{"parent":"n_uz1_652519","child":"n_uz1_652524"},{"parent":"n_uz1_652524","child":"n_uz1_652444"},{"parent":"n_uz1_652524","child":"n_uz1_652452"},{"parent":"n_uz1_652523","child":"n_uz1_652444"},{"parent":"n_uz1_652523","child":"n_uz1_652452"},{"parent":"n_uz1_652522","child":"n_uz1_652444"},{"parent":"n_uz1_652522","child":"n_uz1_652452"},{"parent":"n_uz1_652521","child":"n_uz1_652444"},{"parent":"n_uz1_652521","child":"n_uz1_652446"},{"parent":"n_uz1_652521","child":"n_uz1_652452"},{"parent":"n_uz1_652446","child":"n_uz1_652444"},{"parent":"n_uz1_652520","child":"n_uz1_652444"},{"parent":"n_uz1_652520","child":"n_uz1_652446"},{"parent":"n_uz1_652520","child":"n_uz1_652452"},{"parent":"n_uz1_652518","child":"n_uz1_652444"},{"parent":"n_uz1_652459","child":"n_uz1_652451"},{"parent":"n_uz1_652459","child":"n_uz1_652460"},{"parent":"n_uz1_652460","child":"n_uz1_652444"},{"parent":"n_uz1_652460","child":"n_uz1_652452"},{"parent":"n_uz1_652451","child":"n_uz1_652442"},{"parent":"n_uz1_652451","child":"n_uz1_652443"},{"parent":"n_uz1_652443","child":"n_uz1_652444"},{"parent":"n_uz1_652443","child":"n_uz1_652812"},{"parent":"n_uz1_652812","child":"n_uz1_652444"},{"parent":"n_uz1_652442","child":"n_uz1_652444"},{"parent":"n_uz1_652442","child":"n_uz1_652446"},{"parent":"n_uz1_652441","child":"n_uz1_652444"},{"parent":"n_uz1_652440","child":"n_uz1_652444"},{"parent":"n_uz1_652440","child":"n_uz1_652447"},{"parent":"n_uz1_652447","child":"n_uz1_652448"},{"parent":"n_uz1_652447","child":"n_uz1_652449"},{"parent":"n_uz1_652449","child":"n_uz1_652453"},{"parent":"n_uz1_652449","child":"n_uz1_652444"},{"parent":"n_uz1_652448","child":"n_uz1_652450"},{"parent":"n_uz1_652448","child":"n_uz1_652451"},{"parent":"n_uz1_652450","child":"n_uz1_652444"},{"parent":"n_uz1_652439","child":"n_uz1_652442"},{"parent":"n_uz1_652439","child":"n_uz1_652443"},{"parent":"n_uz1_652427","child":"n_uz1_652478"},{"parent":"n_uz1_652427","child":"n_uz1_652479"},{"parent":"n_uz1_652427","child":"n_uz1_652480"},{"parent":"n_uz1_652427","child":"n_uz1_652481"},{"parent":"n_uz1_652427","child":"n_uz1_873544"},{"parent":"n_uz1_873544","child":"n_uz1_873545"},{"parent":"n_uz1_873544","child":"n_uz1_873546"},{"parent":"n_uz1_873544","child":"n_uz1_873547"},{"parent":"n_uz1_873544","child":"n_uz1_652549"},{"parent":"n_uz1_652549","child":"n_uz1_655097"},{"parent":"n_uz1_652549","child":"n_uz1_750042"},{"parent":"n_uz1_750042","child":"n_uz1_652553"},{"parent":"n_uz1_750042","child":"n_uz1_652555"},{"parent":"n_uz1_750042","child":"n_uz1_749998"},{"parent":"n_uz1_749998","child":"n_uz1_655386"},{"parent":"n_uz1_655386","child":"n_uz1_655387"},{"parent":"n_uz1_652555","child":"n_uz1_652556"},{"parent":"n_uz1_652555","child":"n_uz1_652559"},{"parent":"n_uz1_652555","child":"n_uz1_652560"},{"parent":"n_uz1_652560","child":"n_uz1_652444"},{"parent":"n_uz1_652560","child":"n_uz1_652452"},{"parent":"n_uz1_652559","child":"n_uz1_652444"},{"parent":"n_uz1_652559","child":"n_uz1_652452"},{"parent":"n_uz1_652556","child":"n_uz1_652557"},{"parent":"n_uz1_652556","child":"n_uz1_652558"},{"parent":"n_uz1_652558","child":"n_uz1_652444"},{"parent":"n_uz1_652557","child":"n_uz1_652444"},{"parent":"n_uz1_652557","child":"n_uz1_652452"},{"parent":"n_uz1_652553","child":"n_uz1_652444"},{"parent":"n_uz1_652553","child":"n_uz1_652452"},{"parent":"n_uz1_655097","child":"n_uz1_652444"},{"parent":"n_uz1_655097","child":"n_uz1_652553"},{"parent":"n_uz1_655097","child":"n_uz1_652555"},{"parent":"n_uz1_655097","child":"n_uz1_749998"},{"parent":"n_uz1_652481","child":"n_uz1_652444"},{"parent":"n_uz1_652481","child":"n_uz1_652452"},{"parent":"n_uz1_652480","child":"n_uz1_652444"},{"parent":"n_uz1_652479","child":"n_uz1_652444"},{"parent":"n_uz1_652478","child":"n_uz1_652482"},{"parent":"n_uz1_652478","child":"n_uz1_652439"},{"parent":"n_uz1_652482","child":"n_uz1_652444"},{"parent":"n_uz1_652425","child":"n_uz1_652426"},{"parent":"n_uz1_652425","child":"n_uz1_652427"}]},{"name":"CLICK — Hamyon (UZ)","rootId":"n_uz2_652428","nodes":[{"id":"n_uz2_652428","title":"CLICK Hamyon","reply":"<p><strong>Click-Hamyon — bu virtual hisob bo'lib, uni to'ldirish mumkin, undan turli xizmatlarga va xaridlarga to'lasa va pul o'tkazmalarini amalga oshirsa bo'ladi.<br/><br/>CLICK Hamyon 2 turi mavjud:<br/></strong></p>\n<ul>\n<li>Light – Ba'zi cheklovlar mavjud - masalan, bunday hamyonning balansi 5 BHMdan oshmasligi kerak (1 700 000 so'm, 1 BHM = 340 000 so'm).</li>\n<li>Unlim – Unlim Click-Hamyonda 500 mln so'mgacha mablag' saqlash mumkin. Bundan tashqari, Premium yordamida 30 mln so'mgacha to'lovlar amalga oshirish va mablag' o'tkazish mumkin.</li>\n</ul>\n<p>Unlim hamyon olish uchun Click Up ilovasi orqali identifikatsiyadan o'tishingiz lozim </p>"},{"id":"n_uz2_898624","title":"CLICK hamyoning xizmat haqqi","reply":"<p>Mazkur o‘zgarishlar infratuzilmaning barqaror va xavfsiz ishlashi, nofaol hamyonlarga xizmat ko‘rsatish va foydalanuvchi ma’lumotlarini himoya qilish zarurati bilan bog‘liq.</p>"},{"id":"n_uz2_898633","title":"Yechimdan qanday qochish mumkin?","reply":"<p>Hamyon faol bo‘lishi uchun to‘lov, o‘tkazma, hisobni to‘ldirish yoki cashback olish kabi istalgan mablag‘ harakati amalga oshirilishi kerak.</p>"},{"id":"n_uz2_898632","title":"Tarif yana qaysi holatlarda qo‘llaniladi?","reply":"<p>Tarif akkaunt o‘chirilgandan keyin qoldiq qolgan hamyonlarga va “dospisaniya” statusidagi hamyonlarga ham qo‘llanishi mumkin.</p>"},{"id":"n_uz2_898631","title":"Tarif kimlarga qo‘llaniladi?","reply":"<p>Tarif faqat jismoniy shaxslarning hamyonlariga qo‘llaniladi va o‘zini o‘zi band qilganlar hamda yuridik shaxslarga tatbiq etilmaydi.</p>"},{"id":"n_uz2_898630","title":"Balans nol bo‘lsa yana yechim bo‘ladimi?","reply":"<p>Yo‘q. Balans yana ijobiy bo‘lmaguncha keyingi yechimlar amalga oshirilmaydi.</p>"},{"id":"n_uz2_898629","title":"Mablag‘ yetarli bo‘lmasa nima bo‘ladi?","reply":"<p>Agar mablag‘ tarifdan kam bo‘lsa, faqat mavjud qoldiq yechiladi va balans minusga tushmaydi.</p>"},{"id":"n_uz2_898628","title":"Mablag‘ qachon yechiladi?","reply":"<p>Mablag‘ har oy va faqat hamyonda ijobiy qoldiq mavjud bo‘lsa yechiladi.</p>"},{"id":"n_uz2_898627","title":"Tarif miqdori qancha?","reply":"<p>Tarif miqdori BHMning 1% va tarif summasidan tashqari qo‘shimcha 12% QQSni tashkil qiladi.</p>"},{"id":"n_uz2_898626","title":"Qaysi operatsiyalar hamyon faolligi hisoblanadi?","reply":"<p>Operatsiyalarga to‘lov va o‘tkazmalar, hisobni to‘ldirish, cashback tushumi, aksiya bonuslari va boshqa mablag‘ harakatlari kiradi.</p>"},{"id":"n_uz2_898625","title":"Xizmatdan qanday foydalanish mumkin?","reply":"<p>Xizmat 180 kalendar kun davomida mablag‘ harakati bo‘lmagan jismoniy shaxslarning nofaol elektron hamyonlariga avtomatik tarzda qo‘llaniladi.</p>"},{"id":"n_uz2_652487","title":"Qanday to'ldirish mumkin","reply":"<p>CLICK tizimi orqali o'tkazmalarni amalga oshirib to'ldirishingiz mumkin yoki  Paynet bankomatlari orqali naqd pulda to'ldirish mumkin</p>"},{"id":"n_uz2_652444","title":"Tushunarli","reply":"<p>Yana savollaringiz bormi ? </p>"},{"id":"n_uz2_652445","title":"Yo","reply":"<p>Murojaatingiz uchun raxmat. Suhbatdan keyingi savolga javob qoldirishingizni so'raymiz. Salomat bo'ling</p>"},{"id":"n_uz2_652486","title":"Hamyondagi pulni ishlatish","reply":"<p>Click hamyon orqali Siz uyali aloqa, internet provaydor, taxi.uz, Click hamyondan Click hamyonga(% olmaydi) va plastik kartalarga ham o'tkazma qilishingiz mumkin (o'tkazma uchun 1,5% ni tashkil etadi) va Joylarda to'lov xizmatidan ham to'lov amalga oshirishingiz mumkin bo'ladi va Komunal to'lovlarga ham to'lov qilishingiz mumkin.</p>"},{"id":"n_uz2_652492","title":"Qanday kartaga o'tkazish mumkin","reply":"<p>CLICK hamyondan Uzcard va Humo kartalariga o'tkazma amalga oshirish mumkin. Agarda siz USSD orqali foydalansangiz avvalo hamyonni asosiy kartaga o'zgartirish lozim, so'ngra quyidagicha terib o'tkazma amalga oshirish mumkin <i>*880*karta raqami*summa# </i> Agarda ilova orqali foydalansangiz o'tkazmalar bo'limiga kiring va karta raqamlarini kiriting yoki o'zingizni kartangizga o'tkazmoqchi bo'lsangiz \"Kartalarim orasida\" tugmasini bosing va o'tkazmani amalga oshiring.</p>"},{"id":"n_uz2_652493","title":"Qilib ko'rdim bo'lmadi","reply":"<p>Aynan qanday xatolik yuz bermoqda ?</p>"},{"id":"n_uz2_652496","title":"Tez orada","reply":"<p>Ushbu hamkorimizga click hamyonda to'lovlar amalga oshirish imkoni yo'q. </p>"},{"id":"n_uz2_652495","title":"Mablag' yetarli emas","reply":"<p><span style=\"color: #ff0000;\">Hamyon balansini tekshiramiz va agarda hamyon balansida yetarlicha mablag' bo'lsa ARM anketadan \"В процессе\" bo'limini tekshiramiz. Shu yerda to'lov bo'lsa: <span style=\"color: #000000;\">Sizda ishlov holatida to'lov/o'tkazma mavjud.</span><span style=\"color: #000000;\"> Iltimos sizdagi to'lov holati o'zgarishini kuting va keyinroq qaytadan urunib ko'ring. To'lov holatini hisobotlar bo'limi orqali tekshirishingiz mumkin. </span></span></p>"},{"id":"n_uz2_652499","title":"Qachon hal bo'ladi ?","reply":"<p>Afsuski aniq vaqti bizga noma'lum. Sizni to'lovingizni texnik hodimlarimizga tekshiruvga yuborib qo'ydik. Tez orada to'lov/o'tkazma bekor qilinadi yoki muvaffaqiyatli amalga oshadi. To'lov/o'tkazma holatini hisobotlar bo'limi orqali tekshirishingiz mumkin. </p>"},{"id":"n_uz2_652494","title":"Ushbu turdagi kartalar orasida mumkin emas","reply":"<p>CLICK hamyondan faqatgina CLICK tizimiga ulangan kartalarga o'tkazish mumkin</p>"},{"id":"n_uz2_652497","title":"Karta ulangan","reply":"<p>Karta ulangan raqamni va kartaning oxirgi 4 raqamini ayting tekshirib o'tamiz.</p>"},{"id":"n_uz2_652498","title":"Telefon raqam","reply":"<p><span style=\"color: #ff0000;\">Karta rostdan ham ulanganmi yo'qmi tekshiramiz va agarda ulangan bo'lsa qaytadan urunib ko'rishni tavfsiya qilamiz.  Agar yoqilmagan bo'lsa: <span style=\"color: #000000;\">Ushbu raqamda karta ulanmagan, kartani click tizimiga ulab so'ngra qayta o'tkazing </span></span></p>"},{"id":"n_uz2_652452","title":"Agar bo'lmasachi ?","reply":"<p>Agarda sizda o'zgarish bo'lmasa xatolik boshqa bir qurilma orqali videoga oling va bizga @clickuz botimiz orqali yuboring. Mutaxassislarimiz tekshirib o'tishadi</p>"},{"id":"n_uz2_652485","title":"Hamyon o'chirish","reply":"<p>Hamyonning ustiga bosing va «Hamyon o'chirish» tugmasini tanlang. Tizim sizga ichidagi mablag'ni ishlatishni yoki to'lovlar amalga oshirishni taklif qiladi. </p>"},{"id":"n_uz2_652484","title":"Faol emas.","reply":"<p>Tug'ilgan sanangizni kiritib faollashtirishga urunib ko'rdingizmi ? </p>"},{"id":"n_uz2_652489","title":"Xa, lekin bo'lmadi","reply":"<p><span style=\"color: #ff0000; font-family: 'arial black', 'avant garde';\"><span style=\"color: #000000;\">Click hamyon yaratilgan vaqtda siz noto'g'ri sanani kiritgansiz shu sababli sizda xatolik yuz bermoqda. Siz bilan 5 daqiqa ichida qayta bog'lanamiz. Passport ma'lumotlaringizni tasdiqlasangiz sizga yordam beramiz. </span><br/><br/></span></p>\n<p><span style=\"color: #000000; font-family: 'arial black', 'avant garde';\"></span></p>"},{"id":"n_uz2_652491","title":"Premium hamyon","reply":"<p><span style=\"color: #ff0000;\">Qayta qo'ng'iroq qilamiz va tug'ilgan sanani, passport seriya raqamlarini va JShShir raqamini oxirgi 4 ta sonini aniqlashtiramiz.  Ma'lumotlarni \"СТП Рабочая группа\"ga yuboramiz va mijozga javob beramiz:</span> O'zingizning tug'ilgan sanangizni kiritib faollashtirib olishingiz mumkin</p>"},{"id":"n_uz2_652490","title":"Light hamyon","reply":"<p>Qayta qo'ng'iroq qilamiz va mijoz passport seriya raqamlarini, tug'ilgan sanasini aniqlashtiramiz. So'ngra barcha ma'lumotlarni  \"СТП Рабочая группа\"ga yuboramiz  va javob berilgan sanani mijozga taqdim etamiz.</p>"},{"id":"n_uz2_652488","title":"Yo'q","reply":"<p>Click hamyon ustiga bosing va faollashtirish tugmasini bosing. So'ngra tug'ilgan sanangizni kiriting. Agarda siz hamyon yaratgan vaqtingizda tug'ilgan sanangizni to'g'ri kiritgan bo'lsangiz bu holatda sizda hamyon faollashadi. Agarda sana to'g'ri kelmadi deb xatolik bersa biz bilan bog'laning sizga yordam beramiz.</p>"},{"id":"n_uz2_652483","title":"Hamyon qanday yaratish mumkin ?","reply":"<p><span>Click up ilovasida kartalaringiz ro'yxatiga o'ting va \"karta qo'shish\" tugmasini bosing.Sizga chiqqan tanlovlar orasidan click hamyonni tanlang. So'ngra o'zingizning tug'ilgan sanangizni kiriting va ommaviy oferta shartlari bilan tanishib chiqib rozilik bildiring.Muhim! Click hamyon yaratish jarayonida o'zingizning tug'ilgan sanangizni kiriting, chunki ushbu sana hamyonni qayta tiklashda ishlatilinadi.</span></p>"},{"id":"n_uz2_652512","title":"Qanday premium olish mumkin","reply":"<p>Buning uchun Click Up ilovasida identifikatsiyadan o'tishingiz lozim.</p>"}],"edges":[{"parent":"n_uz2_652428","child":"n_uz2_652483"},{"parent":"n_uz2_652428","child":"n_uz2_652484"},{"parent":"n_uz2_652428","child":"n_uz2_652485"},{"parent":"n_uz2_652428","child":"n_uz2_652486"},{"parent":"n_uz2_652428","child":"n_uz2_652487"},{"parent":"n_uz2_652428","child":"n_uz2_898624"},{"parent":"n_uz2_898624","child":"n_uz2_898625"},{"parent":"n_uz2_898624","child":"n_uz2_898626"},{"parent":"n_uz2_898624","child":"n_uz2_898627"},{"parent":"n_uz2_898624","child":"n_uz2_898628"},{"parent":"n_uz2_898624","child":"n_uz2_898629"},{"parent":"n_uz2_898624","child":"n_uz2_898630"},{"parent":"n_uz2_898624","child":"n_uz2_898631"},{"parent":"n_uz2_898624","child":"n_uz2_898632"},{"parent":"n_uz2_898624","child":"n_uz2_898633"},{"parent":"n_uz2_652487","child":"n_uz2_652444"},{"parent":"n_uz2_652444","child":"n_uz2_652445"},{"parent":"n_uz2_652486","child":"n_uz2_652444"},{"parent":"n_uz2_652486","child":"n_uz2_652492"},{"parent":"n_uz2_652492","child":"n_uz2_652444"},{"parent":"n_uz2_652492","child":"n_uz2_652493"},{"parent":"n_uz2_652493","child":"n_uz2_652494"},{"parent":"n_uz2_652493","child":"n_uz2_652495"},{"parent":"n_uz2_652493","child":"n_uz2_652496"},{"parent":"n_uz2_652496","child":"n_uz2_652444"},{"parent":"n_uz2_652495","child":"n_uz2_652499"},{"parent":"n_uz2_652499","child":"n_uz2_652444"},{"parent":"n_uz2_652494","child":"n_uz2_652444"},{"parent":"n_uz2_652494","child":"n_uz2_652497"},{"parent":"n_uz2_652497","child":"n_uz2_652498"},{"parent":"n_uz2_652498","child":"n_uz2_652444"},{"parent":"n_uz2_652498","child":"n_uz2_652452"},{"parent":"n_uz2_652452","child":"n_uz2_652444"},{"parent":"n_uz2_652485","child":"n_uz2_652444"},{"parent":"n_uz2_652484","child":"n_uz2_652488"},{"parent":"n_uz2_652484","child":"n_uz2_652489"},{"parent":"n_uz2_652489","child":"n_uz2_652490"},{"parent":"n_uz2_652489","child":"n_uz2_652491"},{"parent":"n_uz2_652491","child":"n_uz2_652444"},{"parent":"n_uz2_652490","child":"n_uz2_652444"},{"parent":"n_uz2_652488","child":"n_uz2_652444"},{"parent":"n_uz2_652483","child":"n_uz2_652512"},{"parent":"n_uz2_652512","child":"n_uz2_652444"}]}];
+  demoProjectDefs.forEach(function (def) {
+    var demoPid = uid('p');
+    var idMap = {};
+    def.nodes.forEach(function (n) { idMap[n.id] = uid('n'); });
+    data.projects.push({ id: demoPid, name: def.name, ownerId: adminId, rootNodeId: idMap[def.rootId], createdAt: Date.now(), updatedAt: Date.now(), deletedAt: null });
+    def.nodes.forEach(function (n) { data.nodes.push({ id: idMap[n.id], projectId: demoPid, title: n.title, managerReply: n.reply || null }); });
+    def.edges.forEach(function (e) { data.edges.push({ id: uid('e'), parentNodeId: idMap[e.parent], childNodeId: idMap[e.child], sortOrder: 0 }); });
+    data.access.push({ id: uid('a'), projectId: demoPid, userId: opId, role: 'view' });
+  });
+  return data;
+}
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) { var seeded = seedData(); saveData(seeded); return seeded; }
+    return JSON.parse(raw);
+  } catch (e) {
+    var seeded2 = seedData(); saveData(seeded2); return seeded2;
+  }
+}
+function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+/* ---- users ---- */
+function createUserAccount(data, name, email, password, role) {
+  var id = uid('u');
+  data.users.push({ id: id, name: name, email: email, password: password, role: role });
+  saveData(data);
+  return id;
+}
+function deleteUserAccount(data, userId) {
+  data.users = data.users.filter(function (u) { return u.id !== userId; });
+  data.access = data.access.filter(function (a) { return a.userId !== userId; });
+  saveData(data);
+}
+
+/* ---- projects ---- */
+function visibleProjects(data, user) {
+  if (!user) return [];
+  if (user.role === 'admin') {
+    var accessIds = data.access.filter(function (a) { return a.userId === user.id; }).map(function (a) { return a.projectId; });
+    return data.projects.filter(function (p) { return !p.deletedAt && (p.ownerId === user.id || accessIds.indexOf(p.id) !== -1); });
+  }
+  var myAccess = data.access.filter(function (a) { return a.userId === user.id; }).map(function (a) { return a.projectId; });
+  return data.projects.filter(function (p) { return !p.deletedAt && myAccess.indexOf(p.id) !== -1; });
+}
+function trashedProjects(data, user) {
+  return data.projects.filter(function (p) { return p.deletedAt && p.ownerId === user.id; });
+}
+function createProject(data, name, ownerId) {
+  var pid = uid('p'); var rid = uid('n');
+  data.projects.push({ id: pid, name: name, ownerId: ownerId, rootNodeId: rid, createdAt: Date.now(), updatedAt: Date.now(), deletedAt: null });
+  data.nodes.push({ id: rid, projectId: pid, title: 'Начало разговора', managerReply: null });
+  saveData(data);
+  return pid;
+}
+function renameProject(data, projectId, name) {
+  var p = data.projects.find(function (x) { return x.id === projectId; });
+  if (p) { p.name = name; p.updatedAt = Date.now(); saveData(data); }
+}
+function softDeleteProject(data, projectId) {
+  var p = data.projects.find(function (x) { return x.id === projectId; });
+  if (p) { p.deletedAt = Date.now(); saveData(data); }
+}
+function restoreProject(data, projectId) {
+  var p = data.projects.find(function (x) { return x.id === projectId; });
+  if (p) { p.deletedAt = null; saveData(data); }
+}
+function hardDeleteProject(data, projectId) {
+  var nodeIds = new Set(data.nodes.filter(function (n) { return n.projectId === projectId; }).map(function (n) { return n.id; }));
+  data.nodes = data.nodes.filter(function (n) { return n.projectId !== projectId; });
+  data.edges = data.edges.filter(function (e) { return !nodeIds.has(e.parentNodeId) && !nodeIds.has(e.childNodeId); });
+  data.access = data.access.filter(function (a) { return a.projectId !== projectId; });
+  data.projects = data.projects.filter(function (p) { return p.id !== projectId; });
+  saveData(data);
+}
+
+/* ---- nodes & edges ---- */
+function projectNodes(data, projectId) { return data.nodes.filter(function (n) { return n.projectId === projectId; }); }
+function childEdges(data, parentNodeId) { return data.edges.filter(function (e) { return e.parentNodeId === parentNodeId; }).sort(function (a, b) { return a.sortOrder - b.sortOrder; }); }
+function parentEdgesOf(data, nodeId) { return data.edges.filter(function (e) { return e.childNodeId === nodeId; }); }
+function createNode(data, projectId, title, managerReply) {
+  var id = uid('n');
+  data.nodes.push({ id: id, projectId: projectId, title: title, managerReply: managerReply || null });
+  return id;
+}
+function attachNode(data, parentNodeId, childNodeId) {
+  var siblings = childEdges(data, parentNodeId);
+  var order = siblings.length ? siblings[siblings.length - 1].sortOrder + 1 : 0;
+  data.edges.push({ id: uid('e'), parentNodeId: parentNodeId, childNodeId: childNodeId, sortOrder: order });
+}
+function detachEdge(data, edgeId) {
+  data.edges = data.edges.filter(function (e) { return e.id !== edgeId; });
+  saveData(data);
+}
+function collectSubtree(data, nodeId) {
+  var visited = new Set(); var stack = [nodeId];
+  while (stack.length) {
+    var id = stack.pop();
+    if (visited.has(id)) continue;
+    visited.add(id);
+    data.edges.filter(function (e) { return e.parentNodeId === id; }).forEach(function (e) { stack.push(e.childNodeId); });
+  }
+  return visited;
+}
+function findReuseWarnings(data, nodeId) {
+  var subtree = collectSubtree(data, nodeId);
+  var warned = [];
+  subtree.forEach(function (id) {
+    if (id === nodeId) return;
+    var parents = parentEdgesOf(data, id).filter(function (e) { return !subtree.has(e.parentNodeId); });
+    if (parents.length) {
+      var n = data.nodes.find(function (x) { return x.id === id; });
+      if (n) warned.push(n.title);
+    }
+  });
+  return warned;
+}
+function cascadeDeleteNode(data, nodeId) {
+  var subtree = collectSubtree(data, nodeId);
+  data.nodes = data.nodes.filter(function (n) { return !subtree.has(n.id); });
+  data.edges = data.edges.filter(function (e) { return !subtree.has(e.parentNodeId) && !subtree.has(e.childNodeId); });
+  saveData(data);
+}
+function isNodeReused(data, nodeId) { return parentEdgesOf(data, nodeId).length > 1; }
+
+/* ================= APP STATE ================= */
+var state = {
+  view: 'login', // login | dashboard | trash | editor | operator
+  currentUserId: null,
+  dashView: 'grid',
+  search: '',
+  currentProjectId: null,
+  currentNodeId: null, // operator mode current node
+  historyStack: [],
+  expanded: {}, // editor: nodeId -> bool
+  editorSearch: '',
+  opFontSize: 15,
+  toast: null,
+};
+
+var data = loadData();
+
+function currentUser() { return data.users.find(function (u) { return u.id === state.currentUserId; }); }
+function showToast(msg) { state.toast = msg; render(); setTimeout(function () { state.toast = null; render(); }, 2200); }
+
+function esc(str) { return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function fmtDate(ts) { var d = new Date(ts); return ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + d.getFullYear(); }
+
+function render() {
+  var app = document.getElementById('app');
+  if (state.view === 'login') { app.innerHTML = renderLogin(); wireLogin(); }
+  else if (state.view === 'dashboard') { app.innerHTML = renderShell(renderDashboard()); wireShell(); wireDashboard(); }
+  else if (state.view === 'trash') { app.innerHTML = renderShell(renderTrash()); wireShell(); wireTrash(); }
+  else if (state.view === 'editor') { app.innerHTML = renderEditor(); wireEditor(); }
+  else if (state.view === 'operator') { app.innerHTML = renderOperator(); wireOperator(); }
+  app.insertAdjacentHTML('beforeend', state.toast ? '<div class="toast">' + esc(state.toast) + '</div>' : '');
+}
+
+/* ================= LOGIN ================= */
+function renderLogin() {
+  return ''
+    + '<div class="login-wrap"><div class="login-box">'
+    + '  <div class="login-brand"><div class="mark">С</div><h1>Конструктор скриптов</h1><p>Войдите, чтобы продолжить</p></div>'
+    + '  <div class="card" style="padding:26px 28px;">'
+    + '    <div class="field"><div class="field-label">Email</div><input type="email" id="loginEmail" placeholder="admin@example.com"></div>'
+    + '    <div class="field"><div class="field-label">Пароль</div><input type="password" id="loginPassword" placeholder="••••••••"></div>'
+    + '    <div id="loginError" style="display:none;font-size:12.5px;color:var(--danger);background:var(--danger-soft);border-radius:8px;padding:8px 12px;margin-bottom:12px;"></div>'
+    + '    <button class="btn primary" id="loginSubmit" style="width:100%;justify-content:center;height:40px;">Войти</button>'
+    + '  </div>'
+    + '  <div class="demo-hint">Демо-доступ: admin@example.com / admin123 (администратор)<br>operator@example.com / operator123 (оператор)</div>'
+    + '</div></div>';
+}
+function wireLogin() {
+  function submit() {
+    var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    var pass = document.getElementById('loginPassword').value;
+    var user = data.users.find(function (u) { return u.email.toLowerCase() === email && u.password === pass; });
+    var errEl = document.getElementById('loginError');
+    if (!user) { errEl.style.display = 'block'; errEl.textContent = 'Неверный email или пароль'; return; }
+    state.currentUserId = user.id;
+    state.view = 'dashboard';
+    render();
+  }
+  document.getElementById('loginSubmit').addEventListener('click', submit);
+  document.getElementById('loginPassword').addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+}
+
+/* ================= SHELL ================= */
+function renderTopbar() {
+  var user = currentUser();
+  return ''
+    + '<div class="topbar">'
+    + '  <div class="brand"><div class="mark">С</div>Конструктор скриптов</div>'
+    + '  <div class="spacer"></div>'
+    + '  <div class="user">' + esc(user ? user.name : '') + ' · ' + (user && user.role === 'admin' ? 'администратор' : 'оператор') + '</div>'
+    + '  <button class="icon-btn" id="logoutBtn" title="Выйти"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>'
+    + '</div>';
+}
+function renderShell(inner) {
+  return renderTopbar() + '<div class="dash-wrap">' + inner + '</div>';
+}
+function wireShell() {
+  document.getElementById('logoutBtn').addEventListener('click', function () {
+    state.currentUserId = null; state.view = 'login'; render();
+  });
+}
+
+/* ================= DASHBOARD ================= */
+function renderDashboard() {
+  var user = currentUser();
+  var projects = visibleProjects(data, user);
+  var q = state.search.trim().toLowerCase();
+  if (q) projects = projects.filter(function (p) { return p.name.toLowerCase().indexOf(q) !== -1; });
+  var isAdmin = user.role === 'admin';
+
+  var toolbar = ''
+    + '<div class="dash-toolbar">'
+    + '  <h1>Мои проекты</h1>'
+    + '  <div class="grow"><input type="search" id="dashSearch" placeholder="Поиск по названию проекта…" value="' + esc(state.search) + '"></div>'
+    + '  <div class="view-toggle">'
+    + '    <button data-view="grid" class="' + (state.dashView === 'grid' ? 'active' : '') + '" title="Карточками"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>'
+    + '    <button data-view="list" class="' + (state.dashView === 'list' ? 'active' : '') + '" title="Списком"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>'
+    + '  </div>'
+    + (isAdmin ? '  <button class="btn" id="openUsersBtn">Пользователи</button>' : '')
+    + (isAdmin ? '  <button class="btn" id="openTrashBtn">Удалённые проекты</button>' : '')
+    + (isAdmin ? '  <button class="btn primary" id="createProjectBtn">+ Создать проект</button>' : '')
+    + '</div>';
+
+  if (!projects.length) {
+    return toolbar + '<div class="empty-state">' + (q ? 'Ничего не найдено' : 'Проектов пока нет') + '</div>';
+  }
+
+  var cardsHtml = projects.map(function (p) {
+    var actions = ''
+      + '<button class="icon-btn" data-act="operator" data-id="' + p.id + '" title="Открыть в режиме оператора"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>'
+      + (isAdmin ? '<button class="icon-btn" data-act="edit" data-id="' + p.id + '" title="Открыть конструктор дерева"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></button>' : '')
+      + (isAdmin ? '<button class="icon-btn" data-act="rename" data-id="' + p.id + '" title="Переименовать"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' : '')
+      + (isAdmin ? '<button class="icon-btn" data-act="access" data-id="' + p.id + '" title="Управление доступом"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button>' : '')
+      + (isAdmin ? '<button class="icon-btn" data-act="delete" data-id="' + p.id + '" title="Удалить"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>' : '');
+    if (state.dashView === 'grid') {
+      return '<div class="card proj-card"><div class="name">' + esc(p.name) + '</div><div class="date">Изменён ' + fmtDate(p.updatedAt) + '</div><div class="actions">' + actions + '</div></div>';
+    }
+    return '<div class="card proj-row"><div class="name">' + esc(p.name) + '</div><div class="date">' + fmtDate(p.updatedAt) + '</div><div class="actions">' + actions + '</div></div>';
+  }).join('');
+
+  return toolbar + '<div class="' + (state.dashView === 'grid' ? 'proj-grid' : 'proj-list') + '">' + cardsHtml + '</div>';
+}
+function wireDashboard() {
+  var searchEl = document.getElementById('dashSearch');
+  if (searchEl) searchEl.addEventListener('input', function (e) {
+    state.search = e.target.value;
+    render();
+    var el = document.getElementById('dashSearch');
+    el.focus();
+    el.selectionStart = el.selectionEnd = el.value.length;
+  });
+  document.querySelectorAll('.view-toggle button').forEach(function (b) { b.addEventListener('click', function () { state.dashView = b.getAttribute('data-view'); render(); }); });
+  var trashBtn = document.getElementById('openTrashBtn'); if (trashBtn) trashBtn.addEventListener('click', function () { state.view = 'trash'; render(); });
+  var usersBtn = document.getElementById('openUsersBtn'); if (usersBtn) usersBtn.addEventListener('click', function () { openUsersModal(); });
+  var createBtn = document.getElementById('createProjectBtn'); if (createBtn) createBtn.addEventListener('click', function () {
+    var name = prompt('Название проекта:', 'Новый проект');
+    if (!name) return;
+    var pid = createProject(data, name.trim() || 'Новый проект', state.currentUserId);
+    showToast('Проект создан');
+    state.currentProjectId = pid; state.view = 'editor'; render();
+  });
+  document.querySelectorAll('[data-act]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.getAttribute('data-id'); var act = b.getAttribute('data-act');
+      if (act === 'operator') { window.open(location.pathname + '?project=' + encodeURIComponent(id) + '&mode=operator', '_blank'); }
+      else if (act === 'edit') { state.currentProjectId = id; state.view = 'editor'; render(); }
+      else if (act === 'rename') {
+        var p = data.projects.find(function (x) { return x.id === id; });
+        var newName = prompt('Название проекта:', p ? p.name : '');
+        if (newName && newName.trim()) { renameProject(data, id, newName.trim()); showToast('Проект переименован'); render(); }
+      }
+      else if (act === 'delete') { if (confirm('Удалить проект в корзину?')) { softDeleteProject(data, id); showToast('Проект удалён'); render(); } }
+      else if (act === 'access') { openAccessModal(id); }
+    });
+  });
+}
+
+/* ================= TRASH ================= */
+function renderTrash() {
+  var user = currentUser();
+  var projects = trashedProjects(data, user);
+  var back = '<div class="dash-toolbar"><button class="btn" id="backToDashBtn">← Назад к проектам</button><h1 style="margin-left:6px;">Удалённые проекты</h1></div>';
+  if (!projects.length) return back + '<div class="empty-state">В корзине пусто</div>';
+  var rows = projects.map(function (p) {
+    return '<div class="card proj-row"><div class="name">' + esc(p.name) + '</div><div class="date">удалён ' + fmtDate(p.deletedAt) + '</div>'
+      + '<div class="actions"><button class="btn" data-restore="' + p.id + '">Восстановить</button><button class="btn danger" data-purge="' + p.id + '">Удалить навсегда</button></div></div>';
+  }).join('');
+  return back + '<div class="proj-list">' + rows + '</div>';
+}
+function wireTrash() {
+  document.getElementById('backToDashBtn').addEventListener('click', function () { state.view = 'dashboard'; render(); });
+  document.querySelectorAll('[data-restore]').forEach(function (b) { b.addEventListener('click', function () { restoreProject(data, b.getAttribute('data-restore')); showToast('Проект восстановлен'); render(); }); });
+  document.querySelectorAll('[data-purge]').forEach(function (b) { b.addEventListener('click', function () {
+    if (confirm('Удалить проект окончательно? Это необратимо.')) { hardDeleteProject(data, b.getAttribute('data-purge')); showToast('Удалено навсегда'); render(); }
+  }); });
+}
+
+/* ================= EDITOR (дерево узлов) ================= */
+function collectAncestors(data, nodeId) {
+  var visited = new Set(); var stack = [nodeId];
+  while (stack.length) {
+    var id = stack.pop();
+    parentEdgesOf(data, id).forEach(function (e) {
+      if (!visited.has(e.parentNodeId)) { visited.add(e.parentNodeId); stack.push(e.parentNodeId); }
+    });
+  }
+  return visited;
+}
+function computeSearchVisibility(project, q) {
+  var visible = new Set(); var autoExpand = new Set();
+  function walk(nodeId, path) {
+    if (path.indexOf(nodeId) !== -1) return false;
+    var node = data.nodes.find(function (n) { return n.id === nodeId; });
+    if (!node) return false;
+    var selfMatch = node.title.toLowerCase().indexOf(q) !== -1;
+    var childMatch = false;
+    childEdges(data, nodeId).forEach(function (e) { if (walk(e.childNodeId, path.concat(nodeId))) childMatch = true; });
+    if (selfMatch || childMatch) { visible.add(nodeId); if (childMatch) autoExpand.add(nodeId); return true; }
+    return false;
+  }
+  walk(project.rootNodeId, []);
+  return { visible: visible, autoExpand: autoExpand };
+}
+var ICON_CHEVRON = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>';
+var ICON_NODE = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1-5.5A8.38 8.38 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 9 8.5z"/></svg>';
+var ICON_RENAME = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+var ICON_BRANCH = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 21V9a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12"/><path d="M12 3v6"/><circle cx="12" cy="3" r="0"/><path d="M15 21H9"/></svg>';
+var ICON_DETACH = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.84 12.25l1.72-1.71a4.5 4.5 0 0 0-6.36-6.37L12.5 5.86"/><path d="M5.17 11.75l-1.71 1.71a4.5 4.5 0 0 0 6.36 6.37l1.7-1.7"/><line x1="8" y1="16" x2="16" y2="8"/></svg>';
+var ICON_DELETE = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+
+function renderReplyBox(node) {
+  var has = node.managerReply && node.managerReply.trim();
+  return '<div class="node-reply-box' + (has ? '' : ' empty') + '">'
+    + (has ? node.managerReply : 'Реплика менеджера не указана!')
+    + '<button class="edit-reply-btn" data-edit-reply="' + node.id + '" title="Редактировать реплику">' + ICON_RENAME + '</button>'
+    + '</div>';
+}
+function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, searchCtx) {
+  ancestors = ancestors || new Set();
+  if (ancestors.has(node.id)) {
+    return '<div class="node-row"><span class="chevron"></span><span class="node-icon">' + ICON_NODE + '</span><span class="title">' + esc(node.title) + ' (цикл)</span></div>';
+  }
+  var nextAncestors = new Set(ancestors); nextAncestors.add(node.id);
+  var edges = childEdges(data, node.id);
+  if (searchCtx) edges = edges.filter(function (e) { return searchCtx.visible.has(e.childNodeId); });
+  var hasChildren = edges.length > 0;
+  var isOpen = forceExpand || isRoot || (searchCtx && searchCtx.autoExpand.has(node.id)) || !!state.expanded[node.id];
+  var reused = isNodeReused(data, node.id);
+
+  var chevron = hasChildren
+    ? '<span class="chevron' + (isOpen ? ' open' : '') + '" data-toggle="' + node.id + '">' + ICON_CHEVRON + '</span>'
+    : '<span class="chevron"></span>';
+  var icon = '<span class="node-icon' + (isRoot ? ' root' : '') + '">' + ICON_NODE + '</span>';
+  var actions = '<div class="node-actions">'
+    + '<button data-node-act="rename" data-id="' + node.id + '" title="Переименовать">' + ICON_RENAME + '</button>'
+    + '<button data-node-act="branch" data-id="' + node.id + '" title="Управление ветками">' + ICON_BRANCH + '</button>'
+    + (!isRoot ? '<button data-node-act="detach" data-id="' + node.id + '" data-parent="' + (parentId || '') + '" title="Открепить">' + ICON_DETACH + '</button>' : '')
+    + (!isRoot ? '<button class="danger" data-node-act="delete" data-id="' + node.id + '" title="Удалить">' + ICON_DELETE + '</button>' : '')
+    + '</div>';
+  var row = '<div class="node-row' + (isRoot ? ' root-row' : '') + '" data-row="' + node.id + '">'
+    + chevron + icon + '<span class="title">' + esc(node.title) + '</span>'
+    + (reused ? '<span class="reuse-badge">переиспользуется</span>' : '')
+    + actions + '</div>';
+
+  var childrenHtml = '';
+  if (isOpen) {
+    var childNodesHtml = hasChildren
+      ? '<div class="node-children">' + edges.map(function (e) {
+          var child = data.nodes.find(function (n) { return n.id === e.childNodeId; });
+          return child ? renderNodeRow(child, depth + 1, false, nextAncestors, forceExpand, node.id, searchCtx) : '';
+        }).join('') + '</div>'
+      : '';
+    childrenHtml = renderReplyBox(node) + '<button class="add-answers-link" data-add="' + node.id + '">+ Добавить ответы</button>' + childNodesHtml;
+  }
+  return row + childrenHtml;
+}
+function renderNodeTree(project) {
+  var root = data.nodes.find(function (n) { return n.id === project.rootNodeId; });
+  if (!root) return '<div class="empty-state">Нет узлов</div>';
+  var q = (state.editorSearch || '').trim().toLowerCase();
+  var searchCtx = null;
+  if (q) {
+    searchCtx = computeSearchVisibility(project, q);
+    if (!searchCtx.visible.has(root.id)) return '<div class="empty-state">Ничего не найдено</div>';
+  }
+  return renderNodeRow(root, 0, true, new Set(), false, null, searchCtx);
+}
+function renderEditorMain() {
+  return '<div class="editor-hint">'
+    + '<h2>Как работать со скриптом</h2>'
+    + '<p>Дерево слева — структура диалога. Кликните по стрелке узла, чтобы раскрыть реплику менеджера и варианты ответов клиента.</p>'
+    + '<p>При наведении на узел появляются значки: переименовать, посмотреть ветку целиком, открепить от этого места или удалить окончательно.</p>'
+    + '<p>Кнопка «+ Добавить ответы» под узлом позволяет быстро создать несколько новых вариантов ответа или переиспользовать уже существующий узел из этого проекта — тогда его текст и вложенные ветки будут одинаковы во всех местах, где он используется.</p>'
+    + '<p>Значок рядом с репликой менеджера открывает редактор текста с форматированием.</p>'
+    + '</div>';
+}
+function renderEditor() {
+  var user = currentUser();
+  var project = data.projects.find(function (p) { return p.id === state.currentProjectId; });
+  if (!project) return renderShell('<div class="empty-state">Проект не найден</div>');
+  if (state.expanded[project.rootNodeId] === undefined) state.expanded[project.rootNodeId] = true;
+  var isAdmin = user.role === 'admin';
+  var editorTop = '<div class="editor-topbar">'
+    + '<button class="icon-btn" id="backToDashBtn2" title="Назад к проектам"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>'
+    + '<div class="proj-title">' + esc(project.name) + '</div>'
+    + '<div class="spacer" style="flex:1;"></div>'
+    + (isAdmin ? '<button class="btn" id="openAsOperatorBtn">Открыть как оператор</button>' : '')
+    + '</div>';
+  var body = '<div class="editor-body">'
+    + '<div class="tree-pane">'
+    + '  <div class="search-box"><input type="search" id="treeSearch" placeholder="Поиск по дереву…" value="' + esc(state.editorSearch) + '"></div>'
+    + '  <div class="tree-scroll" id="treeScroll">' + renderNodeTree(project) + '</div>'
+    + '</div>'
+    + '<div class="editor-main" id="editorMain">' + renderEditorMain() + '</div>'
+    + '</div>';
+  return renderTopbar() + '<div class="editor-shell">' + editorTop + body + '</div>';
+}
+function wireEditor() {
+  wireShell();
+  var backBtn = document.getElementById('backToDashBtn2');
+  if (backBtn) backBtn.addEventListener('click', function () { state.view = 'dashboard'; render(); });
+  var openAsOpBtn = document.getElementById('openAsOperatorBtn');
+  if (openAsOpBtn) openAsOpBtn.addEventListener('click', function () {
+    window.open(location.pathname + '?project=' + encodeURIComponent(state.currentProjectId) + '&mode=operator', '_blank');
+  });
+  var searchEl = document.getElementById('treeSearch');
+  if (searchEl) searchEl.addEventListener('input', function (e) {
+    state.editorSearch = e.target.value;
+    render();
+    var el = document.getElementById('treeSearch');
+    if (el) { el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }
+  });
+
+  var scroll = document.getElementById('treeScroll');
+  if (!scroll) return;
+  scroll.querySelectorAll('[data-toggle]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = el.getAttribute('data-toggle');
+      state.expanded[id] = !state.expanded[id];
+      render();
+    });
+  });
+  scroll.querySelectorAll('[data-add]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.stopPropagation(); openAddAnswersModal(el.getAttribute('data-add')); });
+  });
+  scroll.querySelectorAll('.edit-reply-btn').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.stopPropagation(); openReplyEditorModal(el.getAttribute('data-edit-reply')); });
+  });
+  scroll.querySelectorAll('[data-node-act]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = el.getAttribute('data-id');
+      var act = el.getAttribute('data-node-act');
+      var node = data.nodes.find(function (n) { return n.id === id; });
+      if (!node) return;
+      if (act === 'rename') {
+        var name = prompt('Текст варианта ответа:', node.title);
+        if (name && name.trim()) { node.title = name.trim(); saveData(data); render(); }
+      } else if (act === 'branch') {
+        openBranchViewModal(id);
+      } else if (act === 'detach') {
+        var parentId = el.getAttribute('data-parent');
+        var isOnlyParent = parentEdgesOf(data, id).length <= 1;
+        var msg = isOnlyParent
+          ? 'Открепить «' + node.title + '»? Это единственное место, где используется узел — он останется в системе, но станет недоступен в дереве.'
+          : 'Открепить «' + node.title + '» от этой ветки? Узел останется доступен в других местах, где он используется.';
+        if (confirm(msg)) {
+          var edge = data.edges.find(function (e) { return e.parentNodeId === parentId && e.childNodeId === id; });
+          if (edge) detachEdge(data, edge.id);
+          showToast('Откреплено'); render();
+        }
+      } else if (act === 'delete') {
+        var warnings = findReuseWarnings(data, id);
+        var msg2 = 'Удалить «' + node.title + '» и все дочерние узлы без возможности восстановления?';
+        if (warnings.length) msg2 += '\n\nВнимание: эти узлы также используются в других ветках и тоже будут удалены целиком:\n— ' + warnings.join('\n— ');
+        if (confirm(msg2)) { cascadeDeleteNode(data, id); showToast('Удалено'); render(); }
+      }
+    });
+  });
+}
+
+function openBranchViewModal(nodeId) {
+  var node = data.nodes.find(function (n) { return n.id === nodeId; });
+  if (!node) return;
+  var html = ''
+    + '<div class="overlay" id="branchViewOverlay"><div class="modal branch-view" style="width:480px;">'
+    + '  <div class="modal-header"><h3>Управление ветками: ' + esc(node.title) + '</h3><button class="icon-btn" id="closeBranchView">✕</button></div>'
+    + '  <div class="modal-body">' + renderNodeRow(node, 0, false, new Set(), true, null, null) + '</div>'
+    + '  <div class="modal-footer"><button class="btn" id="closeBranchView2">Закрыть</button></div>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  function close() { var ov = document.getElementById('branchViewOverlay'); if (ov) ov.remove(); }
+  document.getElementById('closeBranchView').addEventListener('click', close);
+  document.getElementById('closeBranchView2').addEventListener('click', close);
+}
+
+function openAddAnswersModal(parentNodeId) {
+  var project = data.projects.find(function (p) { return p.id === state.currentProjectId; });
+  var allNodes = projectNodes(data, project.id);
+  var excludeIds = collectAncestors(data, parentNodeId);
+  excludeIds.add(parentNodeId);
+  var directChildIds = new Set(childEdges(data, parentNodeId).map(function (e) { return e.childNodeId; }));
+  var candidates = allNodes.filter(function (n) { return !excludeIds.has(n.id) && !directChildIds.has(n.id); });
+
+  var html = ''
+    + '<div class="overlay" id="addAnswersOverlay"><div class="modal" style="width:520px;">'
+    + '  <div class="modal-header"><h3>Добавить ответы</h3><button class="icon-btn" id="closeAddAnswers">✕</button></div>'
+    + '  <div class="modal-body">'
+    + '    <div class="field-label">Новые варианты ответа</div>'
+    + '    <div class="new-answers-input" id="newAnswersChips"><input type="text" id="newAnswerInput" placeholder="Введите текст и нажмите Enter…"><span class="enter-hint">Enter</span></div>'
+    + (candidates.length
+        ? '    <div class="field-label" style="margin-top:16px;">Или выберите существующий узел для переиспользования</div>'
+          + '    <div class="existing-answers-grid" id="existingAnswersGrid">' + candidates.map(function (n) {
+              return '<button type="button" class="pill-btn" data-existing="' + n.id + '">' + esc(n.title) + '</button>';
+            }).join('') + '</div>'
+        : '')
+    + '  </div>'
+    + '  <div class="modal-footer"><button class="btn" id="cancelAddAnswers">Отмена</button><button class="btn primary" id="saveAddAnswers">Добавить</button></div>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  var chips = [];
+  function attachInputHandler() {
+    var input = document.getElementById('newAnswerInput');
+    if (!input) return;
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var val = e.target.value.trim();
+        if (val) { chips.push(val); renderChips(); }
+      }
+    });
+  }
+  function renderChips() {
+    var container = document.getElementById('newAnswersChips');
+    var chipsHtml = chips.map(function (title, i) {
+      return '<span class="chip">' + esc(title) + '<button type="button" data-remove-chip="' + i + '">✕</button></span>';
+    }).join('');
+    container.innerHTML = chipsHtml + '<input type="text" id="newAnswerInput" placeholder="Введите текст и нажмите Enter…"><span class="enter-hint">Enter</span>';
+    container.querySelectorAll('[data-remove-chip]').forEach(function (b) {
+      b.addEventListener('click', function () { chips.splice(+b.getAttribute('data-remove-chip'), 1); renderChips(); });
+    });
+    attachInputHandler();
+    document.getElementById('newAnswerInput').focus();
+  }
+  attachInputHandler();
+
+  var selectedExisting = new Set();
+  document.querySelectorAll('#addAnswersOverlay [data-existing]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.getAttribute('data-existing');
+      if (selectedExisting.has(id)) { selectedExisting.delete(id); b.classList.remove('selected'); }
+      else { selectedExisting.add(id); b.classList.add('selected'); }
+    });
+  });
+
+  function close() { var ov = document.getElementById('addAnswersOverlay'); if (ov) ov.remove(); }
+  document.getElementById('closeAddAnswers').addEventListener('click', close);
+  document.getElementById('cancelAddAnswers').addEventListener('click', close);
+  document.getElementById('saveAddAnswers').addEventListener('click', function () {
+    chips.forEach(function (title) {
+      var id = createNode(data, project.id, title, null);
+      attachNode(data, parentNodeId, id);
+    });
+    selectedExisting.forEach(function (id) { attachNode(data, parentNodeId, id); });
+    saveData(data);
+    state.expanded[parentNodeId] = true;
+    close();
+    showToast('Ответы добавлены');
+    render();
+  });
+}
+
+function openReplyEditorModal(nodeId) {
+  var node = data.nodes.find(function (n) { return n.id === nodeId; });
+  if (!node) return;
+  var toolbarBtns = [
+    { cmd: 'bold', label: '<b>Ж</b>', title: 'Жирный' },
+    { cmd: 'italic', label: '<i>К</i>', title: 'Курсив' },
+    { cmd: 'underline', label: '<u>Ч</u>', title: 'Подчёркнутый' },
+    { cmd: 'strikeThrough', label: '<s>S</s>', title: 'Зачёркнутый' },
+    { cmd: 'insertUnorderedList', label: '•', title: 'Список' },
+    { cmd: 'justifyLeft', label: '⇤', title: 'По левому краю' },
+    { cmd: 'justifyCenter', label: '≡', title: 'По центру' },
+    { cmd: 'createLink', label: '🔗', title: 'Ссылка' },
+  ];
+  var html = ''
+    + '<div class="overlay" id="replyEditorOverlay"><div class="modal" id="replyEditorModal" style="width:640px;">'
+    + '  <div class="modal-header"><h3>Реплика менеджера</h3>'
+    + '    <div style="display:flex;gap:6px;align-items:center;">'
+    + '      <button type="button" class="icon-btn" id="fullscreenReplyBtn" title="На весь экран"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>'
+    + '      <button class="icon-btn" id="closeReplyEditor">✕</button>'
+    + '    </div>'
+    + '  </div>'
+    + '  <div class="modal-body">'
+    + '    <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:10px;border:1px solid var(--border);border-radius:9px;padding:6px;">'
+    + toolbarBtns.map(function (b) { return '<button type="button" class="icon-btn" data-cmd="' + b.cmd + '" title="' + b.title + '" style="width:30px;height:30px;">' + b.label + '</button>'; }).join('')
+    + '      <input type="color" class="color-input" id="replyColorInput" title="Цвет текста" value="#181a23">'
+    + '    </div>'
+    + '    <div id="replyEditable" contenteditable="true" style="min-height:180px;border:1px solid var(--border);border-radius:9px;padding:12px;font-size:13.5px;line-height:1.6;outline:none;">' + (node.managerReply || '<p></p>') + '</div>'
+    + '  </div>'
+    + '  <div class="modal-footer spread">'
+    + '    <span class="muted" style="font-size:11.5px;"><span id="replyWordCount">0</span> слов · <span id="replyAutosaveStatus"></span></span>'
+    + '    <div style="display:flex;gap:10px;"><button class="btn" id="cancelReplyEditor">Закрыть</button><button class="btn primary" id="saveReplyEditor">Сохранить</button></div>'
+    + '  </div>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  var editable = document.getElementById('replyEditable');
+  var autosaveTimer = null;
+  function updateWordCount() {
+    var text = editable.textContent.trim();
+    var words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    var wcEl = document.getElementById('replyWordCount');
+    if (wcEl) wcEl.textContent = words;
+  }
+  function autosave() {
+    node.managerReply = editable.innerHTML.trim();
+    saveData(data);
+    var st = document.getElementById('replyAutosaveStatus');
+    if (st) st.textContent = 'сохранено';
+  }
+  updateWordCount();
+  editable.addEventListener('input', function () {
+    updateWordCount();
+    var st = document.getElementById('replyAutosaveStatus');
+    if (st) st.textContent = 'сохранение…';
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(autosave, 700);
+  });
+
+  document.querySelectorAll('#replyEditorOverlay [data-cmd]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var cmd = b.getAttribute('data-cmd');
+      if (cmd === 'createLink') { var url = prompt('Ссылка (URL):', 'https://'); if (!url) return; document.execCommand('createLink', false, url); }
+      else document.execCommand(cmd, false, null);
+      editable.focus();
+    });
+  });
+  document.getElementById('replyColorInput').addEventListener('input', function (e) {
+    document.execCommand('foreColor', false, e.target.value);
+    editable.focus();
+  });
+  document.getElementById('fullscreenReplyBtn').addEventListener('click', function () {
+    document.getElementById('replyEditorModal').classList.toggle('fullscreen');
+  });
+
+  function close() {
+    if (autosaveTimer) { clearTimeout(autosaveTimer); autosave(); }
+    var ov = document.getElementById('replyEditorOverlay'); if (ov) ov.remove();
+    render();
+  }
+  document.getElementById('closeReplyEditor').addEventListener('click', close);
+  document.getElementById('cancelReplyEditor').addEventListener('click', close);
+  document.getElementById('saveReplyEditor').addEventListener('click', function () {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosave();
+    showToast('Реплика сохранена');
+    close();
+  });
+}
+
+/* ================= OPERATOR (тёмный режим) ================= */
+function renderOperator() {
+  var project = data.projects.find(function (p) { return p.id === state.currentProjectId; });
+  if (!project) return '<div class="op-shell"><div class="op-wrap"><div class="empty-state" style="color:#8b909b;">Проект не найден</div></div></div>';
+  var node = data.nodes.find(function (n) { return n.id === state.currentNodeId; }) || data.nodes.find(function (n) { return n.id === project.rootNodeId; });
+  var edges = childEdges(data, node.id);
+  var has = node.managerReply && node.managerReply.trim();
+  var topbar = ''
+    + '<div class="op-topbar">'
+    + '  <button class="op-icon-btn" id="opBackBtn" title="Назад"' + (state.historyStack.length ? '' : ' disabled') + '><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>'
+    + '  <button class="op-icon-btn" id="opFontMinusBtn" title="Меньше шрифт">A-</button>'
+    + '  <button class="op-icon-btn" id="opFontPlusBtn" title="Больше шрифт">A+</button>'
+    + '  <div class="title">' + esc(project.name) + '</div>'
+    + '  <button class="op-icon-btn" id="opResetBtn" title="Начать сначала"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>'
+    + '</div>';
+  var card = '<div class="op-card"><div class="op-actions"><button class="op-icon-btn" id="opCopyBtn" title="Скопировать текст"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>'
+    + '<h2>' + esc(node.title) + '</h2><div class="reply' + (has ? '' : ' empty') + '" style="font-size:' + state.opFontSize + 'px;">' + (has ? node.managerReply : 'Реплика менеджера не указана!') + '</div></div>';
+  var optionsOrEnd = edges.length
+    ? '<div class="op-options">' + edges.map(function (e) {
+        var child = data.nodes.find(function (n) { return n.id === e.childNodeId; });
+        return child ? '<button data-goto="' + child.id + '">' + esc(child.title) + '</button>' : '';
+      }).join('') + '</div>'
+    : '<div class="op-end">Это конец сценария для данной ветки.</div>';
+  return '<div class="op-shell">' + topbar + '<div class="op-wrap">' + card + optionsOrEnd + '</div></div>';
+}
+function wireOperator() {
+  var backBtn = document.getElementById('opBackBtn');
+  if (backBtn) backBtn.addEventListener('click', function () {
+    if (!state.historyStack.length) return;
+    state.currentNodeId = state.historyStack.pop();
+    render();
+  });
+  var resetBtn = document.getElementById('opResetBtn');
+  if (resetBtn) resetBtn.addEventListener('click', function () {
+    var project = data.projects.find(function (p) { return p.id === state.currentProjectId; });
+    state.historyStack = [];
+    state.currentNodeId = project.rootNodeId;
+    render();
+  });
+  var fontMinusBtn = document.getElementById('opFontMinusBtn');
+  if (fontMinusBtn) fontMinusBtn.addEventListener('click', function () {
+    state.opFontSize = Math.max(12, state.opFontSize - 2);
+    render();
+  });
+  var fontPlusBtn = document.getElementById('opFontPlusBtn');
+  if (fontPlusBtn) fontPlusBtn.addEventListener('click', function () {
+    state.opFontSize = Math.min(24, state.opFontSize + 2);
+    render();
+  });
+  var copyBtn = document.getElementById('opCopyBtn');
+  if (copyBtn) copyBtn.addEventListener('click', function () {
+    var node = data.nodes.find(function (n) { return n.id === state.currentNodeId; });
+    if (!node || !node.managerReply) return;
+    var tmp = document.createElement('div');
+    tmp.innerHTML = node.managerReply;
+    var text = tmp.textContent || '';
+    function fallbackCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+    showToast('Текст скопирован');
+  });
+  document.querySelectorAll('[data-goto]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.historyStack.push(state.currentNodeId);
+      state.currentNodeId = b.getAttribute('data-goto');
+      render();
+    });
+  });
+}
+
+function openAccessModal(projectId) {
+  var project = data.projects.find(function (p) { return p.id === projectId; });
+  if (!project) return;
+  var others = data.users.filter(function (u) { return u.id !== project.ownerId; });
+  function hasAccess(userId) { return data.access.some(function (a) { return a.projectId === projectId && a.userId === userId; }); }
+  function rowsHtml() {
+    return others.map(function (u) {
+      var granted = hasAccess(u.id);
+      return '<div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;">'
+        + '<div style="flex:1;"><div style="font-weight:600;font-size:13.5px;">' + esc(u.name) + '</div><div class="muted" style="font-size:11.5px;">' + esc(u.email) + ' · ' + (u.role === 'admin' ? 'администратор' : 'оператор') + '</div></div>'
+        + '<button class="btn' + (granted ? ' primary' : '') + '" data-toggle-access="' + u.id + '">' + (granted ? 'Доступ открыт' : 'Открыть доступ') + '</button>'
+        + '</div>';
+    }).join('');
+  }
+  var html = ''
+    + '<div class="overlay" id="accessOverlay"><div class="modal" style="width:520px;">'
+    + '  <div class="modal-header"><h3>Доступ к проекту «' + esc(project.name) + '»</h3><button class="icon-btn" id="closeAccessModal">✕</button></div>'
+    + '  <div class="modal-body" id="accessModalBody">' + (others.length ? rowsHtml() : '<div class="empty-state">Больше пользователей нет</div>') + '</div>'
+    + '  <div class="modal-footer"><button class="btn" id="doneAccessModal">Готово</button></div>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  function wireToggles() {
+    document.querySelectorAll('#accessOverlay [data-toggle-access]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var userId = b.getAttribute('data-toggle-access');
+        var existing = data.access.find(function (a) { return a.projectId === projectId && a.userId === userId; });
+        if (existing) { data.access = data.access.filter(function (a) { return a.id !== existing.id; }); }
+        else { data.access.push({ id: uid('a'), projectId: projectId, userId: userId, role: 'view' }); }
+        saveData(data);
+        var body = document.getElementById('accessModalBody');
+        if (body) body.innerHTML = rowsHtml();
+        wireToggles();
+      });
+    });
+  }
+  wireToggles();
+  function close() { var ov = document.getElementById('accessOverlay'); if (ov) ov.remove(); render(); }
+  document.getElementById('closeAccessModal').addEventListener('click', close);
+  document.getElementById('doneAccessModal').addEventListener('click', close);
+}
+
+function openUsersModal() {
+  function rowsHtml() {
+    return data.users.map(function (u) {
+      var ownsProjects = data.projects.some(function (p) { return p.ownerId === u.id && !p.deletedAt; });
+      var isSelf = u.id === state.currentUserId;
+      return '<div class="card users-row">'
+        + '<div style="flex:1;"><div style="font-weight:600;font-size:13.5px;">' + esc(u.name) + (isSelf ? ' <span class="muted" style="font-weight:400;">(вы)</span>' : '') + '</div><div class="muted" style="font-size:11.5px;">' + esc(u.email) + '</div></div>'
+        + '<span class="role-badge">' + (u.role === 'admin' ? 'администратор' : 'оператор') + '</span>'
+        + (!isSelf ? '<button class="icon-btn" data-delete-user="' + u.id + '" title="' + (ownsProjects ? 'Нельзя удалить — есть проекты' : 'Удалить пользователя') + '"' + (ownsProjects ? ' disabled' : '') + '><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>' : '')
+        + '</div>';
+    }).join('');
+  }
+  var html = ''
+    + '<div class="overlay" id="usersOverlay"><div class="modal" style="width:560px;">'
+    + '  <div class="modal-header"><h3>Пользователи</h3><button class="icon-btn" id="closeUsersModal">✕</button></div>'
+    + '  <div class="modal-body">'
+    + '    <div id="usersListBody">' + rowsHtml() + '</div>'
+    + '    <div class="card" style="padding:16px;margin-top:12px;">'
+    + '      <div class="field-label" style="margin-bottom:10px;">Добавить пользователя</div>'
+    + '      <div class="field"><input type="text" id="newUserName" placeholder="Имя" style="width:100%;"></div>'
+    + '      <div class="field"><input type="email" id="newUserEmail" placeholder="Email" style="width:100%;"></div>'
+    + '      <div class="field"><input type="text" id="newUserPassword" placeholder="Пароль" style="width:100%;"></div>'
+    + '      <div class="field" style="display:flex;gap:8px;">'
+    + '        <button type="button" class="pill-btn selected" data-role-choice="operator" id="roleChoiceOperator">Оператор</button>'
+    + '        <button type="button" class="pill-btn" data-role-choice="admin" id="roleChoiceAdmin">Администратор</button>'
+    + '      </div>'
+    + '      <button class="btn primary" id="addUserBtn" style="width:100%;justify-content:center;">+ Добавить</button>'
+    + '    </div>'
+    + '  </div>'
+    + '  <div class="modal-footer"><button class="btn" id="doneUsersModal">Готово</button></div>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  var newRole = 'operator';
+  document.querySelectorAll('#usersOverlay [data-role-choice]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      newRole = b.getAttribute('data-role-choice');
+      document.querySelectorAll('#usersOverlay [data-role-choice]').forEach(function (x) { x.classList.remove('selected'); });
+      b.classList.add('selected');
+    });
+  });
+
+  function wireDeletes() {
+    document.querySelectorAll('#usersOverlay [data-delete-user]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (b.hasAttribute('disabled')) return;
+        var userId = b.getAttribute('data-delete-user');
+        if (confirm('Удалить пользователя без возможности восстановления?')) {
+          deleteUserAccount(data, userId);
+          var body = document.getElementById('usersListBody');
+          if (body) body.innerHTML = rowsHtml();
+          wireDeletes();
+          showToast('Пользователь удалён');
+        }
+      });
+    });
+  }
+  wireDeletes();
+
+  document.getElementById('addUserBtn').addEventListener('click', function () {
+    var name = document.getElementById('newUserName').value.trim();
+    var email = document.getElementById('newUserEmail').value.trim().toLowerCase();
+    var password = document.getElementById('newUserPassword').value;
+    if (!name || !email || !password) { showToast('Заполните все поля'); return; }
+    if (data.users.some(function (u) { return u.email.toLowerCase() === email; })) { showToast('Такой email уже используется'); return; }
+    createUserAccount(data, name, email, password, newRole);
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserEmail').value = '';
+    document.getElementById('newUserPassword').value = '';
+    var body = document.getElementById('usersListBody');
+    if (body) body.innerHTML = rowsHtml();
+    wireDeletes();
+    showToast('Пользователь добавлен');
+  });
+
+  function close() { var ov = document.getElementById('usersOverlay'); if (ov) ov.remove(); render(); }
+  document.getElementById('closeUsersModal').addEventListener('click', close);
+  document.getElementById('doneUsersModal').addEventListener('click', close);
+}
+
+/* ================= BOOT ================= */
+function initFromQuery() {
+  try {
+    var params = new URLSearchParams(location.search);
+    var pid = params.get('project');
+    var mode = params.get('mode');
+    if (pid && mode === 'operator') {
+      var project = data.projects.find(function (p) { return p.id === pid; });
+      if (project) {
+        state.currentProjectId = pid;
+        state.currentNodeId = project.rootNodeId;
+        state.historyStack = [];
+        state.view = 'operator';
+      }
+    }
+  } catch (e) {}
+}
+initFromQuery();
+render();
+</script>
+</body>
+</html>
