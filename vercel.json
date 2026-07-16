@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/Конструктор скриптов продаж.html" }
+  ]
+}
