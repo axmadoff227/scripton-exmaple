@@ -797,15 +797,34 @@ function openAddAnswersModal(parentNodeId, onDone) {
   document.getElementById('closeAddAnswers').addEventListener('click', close);
   document.getElementById('cancelAddAnswers').addEventListener('click', close);
   document.getElementById('saveAddAnswers').addEventListener('click', function () {
+    var leftover = document.getElementById('newAnswerInput').value.trim();
+    if (leftover) chips.push(leftover);
+
+    var existingTitles = childEdges(data, parentNodeId).map(function (e) {
+      var n = data.nodes.find(function (x) { return x.id === e.childNodeId; });
+      return n ? n.title.trim().toLowerCase() : '';
+    });
+    var addedCount = 0;
+    var skipped = [];
+    var seenInBatch = {};
     chips.forEach(function (title) {
+      var key = title.trim().toLowerCase();
+      if (existingTitles.indexOf(key) !== -1 || seenInBatch[key]) { skipped.push(title); return; }
+      seenInBatch[key] = true;
       var id = createNode(data, project.id, title, null);
       attachNode(data, parentNodeId, id);
+      addedCount++;
     });
-    selectedExisting.forEach(function (id) { attachNode(data, parentNodeId, id); });
+    selectedExisting.forEach(function (id) { attachNode(data, parentNodeId, id); addedCount++; });
+
+    if (!addedCount && !skipped.length) { showToast('Введите хотя бы один вариант ответа'); return; }
+
     saveData(data);
     state.expanded[parentNodeId] = true;
     close();
-    showToast('Ответы добавлены');
+    var msg = addedCount ? 'Добавлено: ' + addedCount : 'Ничего не добавлено';
+    if (skipped.length) msg += ' · уже есть: ' + skipped.join(', ');
+    showToast(msg);
     onDone();
   });
 }
