@@ -127,11 +127,6 @@ input[type=text]:focus,input[type=email]:focus,input[type=password]:focus,input[
 .enter-hint{font-size:10.5px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:2px 6px;}
 .existing-answers-grid{display:flex;flex-wrap:wrap;gap:8px;max-height:260px;overflow-y:auto;padding:4px 2px;}
 
-/* ---------- branch view (read-only) ---------- */
-.branch-view .node-row{cursor:default;}
-.branch-view .node-actions{display:none !important;}
-.branch-view .add-answers-link{display:none;}
-
 /* ---------- operator (dark) ---------- */
 .op-shell{min-height:100vh;background:#0f1115;color:#f1f1f4;}
 .op-topbar{height:60px;display:flex;align-items:center;padding:0 20px;gap:12px;border-bottom:1px solid #262a33;}
@@ -215,6 +210,17 @@ function loadData() {
   }
 }
 function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+/* ---- session ---- */
+var SESSION_KEY = 'ssb_session_v1';
+function saveSession(userId) { try { localStorage.setItem(SESSION_KEY, userId); } catch (e) {} }
+function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+function restoreSession(data) {
+  try {
+    var userId = localStorage.getItem(SESSION_KEY);
+    return userId && data.users.some(function (u) { return u.id === userId; }) ? userId : null;
+  } catch (e) { return null; }
+}
 
 /* ---- users ---- */
 function createUserAccount(data, name, email, password, role) {
@@ -375,6 +381,7 @@ function wireLogin() {
     if (!user) { errEl.style.display = 'block'; errEl.textContent = 'Неверный email или пароль'; return; }
     state.currentUserId = user.id;
     state.view = 'dashboard';
+    saveSession(user.id);
     render();
   }
   document.getElementById('loginSubmit').addEventListener('click', submit);
@@ -397,7 +404,7 @@ function renderShell(inner) {
 }
 function wireShell() {
   document.getElementById('logoutBtn').addEventListener('click', function () {
-    state.currentUserId = null; state.view = 'login'; render();
+    state.currentUserId = null; state.view = 'login'; clearSession(); render();
   });
 }
 
@@ -554,7 +561,7 @@ function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, se
   var icon = '<span class="node-icon' + (isRoot ? ' root' : '') + '">' + ICON_NODE + '</span>';
   var actions = '<div class="node-actions">'
     + '<button data-node-act="rename" data-id="' + node.id + '" title="Переименовать">' + ICON_RENAME + '</button>'
-    + '<button data-node-act="branch" data-id="' + node.id + '" title="Управление ветками">' + ICON_BRANCH + '</button>'
+    + '<button data-node-act="branch" data-id="' + node.id + '" data-parent="' + (parentId || '') + '" title="Управление ветками">' + ICON_BRANCH + '</button>'
     + (!isRoot ? '<button data-node-act="detach" data-id="' + node.id + '" data-parent="' + (parentId || '') + '" title="Открепить">' + ICON_DETACH + '</button>' : '')
     + (!isRoot ? '<button class="danger" data-node-act="delete" data-id="' + node.id + '" title="Удалить">' + ICON_DELETE + '</button>' : '')
     + '</div>';
@@ -634,21 +641,28 @@ function wireEditor() {
 
   var scroll = document.getElementById('treeScroll');
   if (!scroll) return;
-  scroll.querySelectorAll('[data-toggle]').forEach(function (el) {
+  wireTreeInteractions(scroll, render);
+}
+
+/* Shared interaction wiring for any rendered node-row tree (main editor pane,
+   or the "Управление ветками" modal) — onChange is called after any mutation
+   so the caller can decide what to re-render. */
+function wireTreeInteractions(scopeEl, onChange) {
+  scopeEl.querySelectorAll('[data-toggle]').forEach(function (el) {
     el.addEventListener('click', function (e) {
       e.stopPropagation();
       var id = el.getAttribute('data-toggle');
       state.expanded[id] = !state.expanded[id];
-      render();
+      onChange();
     });
   });
-  scroll.querySelectorAll('[data-add]').forEach(function (el) {
-    el.addEventListener('click', function (e) { e.stopPropagation(); openAddAnswersModal(el.getAttribute('data-add')); });
+  scopeEl.querySelectorAll('[data-add]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.stopPropagation(); openAddAnswersModal(el.getAttribute('data-add'), onChange); });
   });
-  scroll.querySelectorAll('.edit-reply-btn').forEach(function (el) {
-    el.addEventListener('click', function (e) { e.stopPropagation(); openReplyEditorModal(el.getAttribute('data-edit-reply')); });
+  scopeEl.querySelectorAll('.edit-reply-btn').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.stopPropagation(); openReplyEditorModal(el.getAttribute('data-edit-reply'), onChange); });
   });
-  scroll.querySelectorAll('[data-node-act]').forEach(function (el) {
+  scopeEl.querySelectorAll('[data-node-act]').forEach(function (el) {
     el.addEventListener('click', function (e) {
       e.stopPropagation();
       var id = el.getAttribute('data-id');
@@ -657,9 +671,9 @@ function wireEditor() {
       if (!node) return;
       if (act === 'rename') {
         var name = prompt('Текст варианта ответа:', node.title);
-        if (name && name.trim()) { node.title = name.trim(); saveData(data); render(); }
+        if (name && name.trim()) { node.title = name.trim(); saveData(data); onChange(); }
       } else if (act === 'branch') {
-        openBranchViewModal(id);
+        openBranchViewModal(id, el.getAttribute('data-parent'));
       } else if (act === 'detach') {
         var parentId = el.getAttribute('data-parent');
         var isOnlyParent = parentEdgesOf(data, id).length <= 1;
@@ -669,34 +683,57 @@ function wireEditor() {
         if (confirm(msg)) {
           var edge = data.edges.find(function (e) { return e.parentNodeId === parentId && e.childNodeId === id; });
           if (edge) detachEdge(data, edge.id);
-          showToast('Откреплено'); render();
+          showToast('Откреплено'); onChange();
         }
       } else if (act === 'delete') {
         var warnings = findReuseWarnings(data, id);
         var msg2 = 'Удалить «' + node.title + '» и все дочерние узлы без возможности восстановления?';
         if (warnings.length) msg2 += '\n\nВнимание: эти узлы также используются в других ветках и тоже будут удалены целиком:\n— ' + warnings.join('\n— ');
-        if (confirm(msg2)) { cascadeDeleteNode(data, id); showToast('Удалено'); render(); }
+        if (confirm(msg2)) { cascadeDeleteNode(data, id); showToast('Удалено'); onChange(); }
       }
     });
   });
 }
 
-function openBranchViewModal(nodeId) {
+var branchModalCounter = 0;
+function openBranchViewModal(nodeId, parentId) {
   var node = data.nodes.find(function (n) { return n.id === nodeId; });
   if (!node) return;
+  if (state.expanded[nodeId] === undefined) state.expanded[nodeId] = true;
+  var mid = 'bv' + (++branchModalCounter);
   var html = ''
-    + '<div class="overlay" id="branchViewOverlay"><div class="modal branch-view" style="width:480px;">'
-    + '  <div class="modal-header"><h3>Управление ветками: ' + esc(node.title) + '</h3><button class="icon-btn" id="closeBranchView">✕</button></div>'
-    + '  <div class="modal-body">' + renderNodeRow(node, 0, false, new Set(), true, null, null) + '</div>'
-    + '  <div class="modal-footer"><button class="btn" id="closeBranchView2">Закрыть</button></div>'
+    + '<div class="overlay" id="' + mid + 'Overlay"><div class="modal" style="width:480px;">'
+    + '  <div class="modal-header"><h3 id="' + mid + 'Title">Управление ветками: ' + esc(node.title) + '</h3><button class="icon-btn" id="' + mid + 'Close">✕</button></div>'
+    + '  <div class="modal-body" id="' + mid + 'Body">' + renderNodeRow(node, 0, false, new Set(), false, parentId, null) + '</div>'
+    + '  <div class="modal-footer"><button class="btn" id="' + mid + 'Close2">Закрыть</button></div>'
     + '</div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
-  function close() { var ov = document.getElementById('branchViewOverlay'); if (ov) ov.remove(); }
-  document.getElementById('closeBranchView').addEventListener('click', close);
-  document.getElementById('closeBranchView2').addEventListener('click', close);
+
+  function wireBody() {
+    var body = document.getElementById(mid + 'Body');
+    if (body) wireTreeInteractions(body, refresh);
+  }
+  function refresh() {
+    var still = data.nodes.find(function (n) { return n.id === nodeId; });
+    var body = document.getElementById(mid + 'Body');
+    if (!still) { close(); render(); showToast('Узел удалён'); return; }
+    if (body) {
+      body.innerHTML = renderNodeRow(still, 0, false, new Set(), false, parentId, null);
+      wireBody();
+    }
+    var titleEl = document.getElementById(mid + 'Title');
+    if (titleEl) titleEl.textContent = 'Управление ветками: ' + still.title;
+    render();
+  }
+  wireBody();
+
+  function close() { var ov = document.getElementById(mid + 'Overlay'); if (ov) ov.remove(); }
+  document.getElementById(mid + 'Close').addEventListener('click', close);
+  document.getElementById(mid + 'Close2').addEventListener('click', close);
 }
 
-function openAddAnswersModal(parentNodeId) {
+function openAddAnswersModal(parentNodeId, onDone) {
+  onDone = onDone || render;
   var project = data.projects.find(function (p) { return p.id === state.currentProjectId; });
   var allNodes = projectNodes(data, project.id);
   var excludeIds = collectAncestors(data, parentNodeId);
@@ -769,11 +806,12 @@ function openAddAnswersModal(parentNodeId) {
     state.expanded[parentNodeId] = true;
     close();
     showToast('Ответы добавлены');
-    render();
+    onDone();
   });
 }
 
-function openReplyEditorModal(nodeId) {
+function openReplyEditorModal(nodeId, onDone) {
+  onDone = onDone || render;
   var node = data.nodes.find(function (n) { return n.id === nodeId; });
   if (!node) return;
   var toolbarBtns = [
@@ -850,7 +888,7 @@ function openReplyEditorModal(nodeId) {
   function close() {
     if (autosaveTimer) { clearTimeout(autosaveTimer); autosave(); }
     var ov = document.getElementById('replyEditorOverlay'); if (ov) ov.remove();
-    render();
+    onDone();
   }
   document.getElementById('closeReplyEditor').addEventListener('click', close);
   document.getElementById('cancelReplyEditor').addEventListener('click', close);
@@ -1079,6 +1117,8 @@ function initFromQuery() {
     }
   } catch (e) {}
 }
+var restoredUserId = restoreSession(data);
+if (restoredUserId) { state.currentUserId = restoredUserId; state.view = 'dashboard'; }
 initFromQuery();
 render();
 </script>
