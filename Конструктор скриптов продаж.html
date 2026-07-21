@@ -117,7 +117,6 @@ input[type=text]:focus,input[type=email]:focus,input[type=password]:focus,input[
 .node-row .node-icon.root{color:var(--success);}
 .node-row .title{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .node-row.root-row .title{font-weight:700;}
-.node-row .reuse-badge{font-size:10px;color:var(--muted);background:var(--bg);border-radius:5px;padding:1px 5px;flex-shrink:0;}
 .node-actions{display:none;gap:2px;flex-shrink:0;}
 .node-actions button{width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .node-actions button:hover{background:var(--panel);color:var(--text);box-shadow:0 0 0 1px var(--border);}
@@ -349,7 +348,6 @@ function cascadeDeleteNode(data, nodeId) {
   data.edges = data.edges.filter(function (e) { return !subtree.has(e.parentNodeId) && !subtree.has(e.childNodeId); });
   saveData(data);
 }
-function isNodeReused(data, nodeId) { return parentEdgesOf(data, nodeId).length > 1; }
 
 /* ================= APP STATE ================= */
 var state = {
@@ -448,12 +446,18 @@ function fmtDate(ts) { var d = new Date(ts); return ('0' + d.getDate()).slice(-2
 
 function render() {
   var app = document.getElementById('app');
+  var prevScroll = document.getElementById('treeScroll');
+  var scrollTop = prevScroll ? prevScroll.scrollTop : null;
   if (state.view === 'login') { app.innerHTML = renderLogin(); wireLogin(); }
   else if (state.view === 'dashboard') { app.innerHTML = renderShell(renderDashboard()); wireShell(); wireDashboard(); }
   else if (state.view === 'trash') { app.innerHTML = renderShell(renderTrash()); wireShell(); wireTrash(); }
   else if (state.view === 'editor') { app.innerHTML = renderEditor(); wireEditor(); }
   else if (state.view === 'operator') { app.innerHTML = renderOperator(); wireOperator(); }
   app.insertAdjacentHTML('beforeend', state.toast ? '<div class="toast">' + esc(state.toast) + '</div>' : '');
+  if (scrollTop !== null) {
+    var newScroll = document.getElementById('treeScroll');
+    if (newScroll) newScroll.scrollTop = scrollTop;
+  }
 }
 
 /* ================= LOGIN ================= */
@@ -667,7 +671,6 @@ function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, se
   edges = filterEdgesByLang(edges, state.activeLang);
   var hasChildren = edges.length > 0;
   var isOpen = forceExpand || isRoot || (searchCtx && searchCtx.autoExpand.has(node.id)) || !!state.expanded[node.id];
-  var reused = isNodeReused(data, node.id);
 
   var chevron = '<span class="chevron' + (isOpen ? ' open' : '') + '" data-toggle="' + node.id + '">' + ICON_CHEVRON + '</span>';
   var icon = '<span class="node-icon' + (isRoot ? ' root' : '') + '">' + ICON_NODE + '</span>';
@@ -679,7 +682,6 @@ function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, se
     + '</div>';
   var row = '<div class="node-row' + (isRoot ? ' root-row' : '') + '" data-row="' + node.id + '">'
     + chevron + icon + '<span class="title">' + esc(nodeTitle(node, state.activeLang)) + '</span>' + langBadgeHtml(node, state.activeLang, mixed)
-    + (reused ? '<span class="reuse-badge">переиспользуется</span>' : '')
     + actions + '</div>';
 
   var childrenHtml = '';
@@ -817,11 +819,14 @@ function openBranchViewModal(nodeId, parentId) {
   var node = data.nodes.find(function (n) { return n.id === nodeId; });
   if (!node) return;
   if (state.expanded[nodeId] === undefined) state.expanded[nodeId] = true;
+  var branchProject = data.projects.find(function (p) { return p.id === node.projectId; });
+  var branchStats = branchProject ? projectLangStats(branchProject) : { hasRu: false, hasUz: false };
+  var branchMixed = branchStats.hasRu && branchStats.hasUz;
   var mid = 'bv' + (++branchModalCounter);
   var html = ''
     + '<div class="overlay" id="' + mid + 'Overlay"><div class="modal" style="width:480px;">'
     + '  <div class="modal-header"><h3 id="' + mid + 'Title">Управление ветками: ' + esc(nodeTitle(node, state.activeLang)) + '</h3><button class="icon-btn" id="' + mid + 'Close">✕</button></div>'
-    + '  <div class="modal-body" id="' + mid + 'Body">' + renderNodeRow(node, 0, false, new Set(), false, parentId, null) + '</div>'
+    + '  <div class="modal-body" id="' + mid + 'Body">' + renderNodeRow(node, 0, false, new Set(), false, parentId, null, branchMixed) + '</div>'
     + '  <div class="modal-footer"><button class="btn" id="' + mid + 'Close2">Закрыть</button></div>'
     + '</div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
@@ -835,7 +840,7 @@ function openBranchViewModal(nodeId, parentId) {
     var body = document.getElementById(mid + 'Body');
     if (!still) { close(); render(); showToast('Узел удалён'); return; }
     if (body) {
-      body.innerHTML = renderNodeRow(still, 0, false, new Set(), false, parentId, null);
+      body.innerHTML = renderNodeRow(still, 0, false, new Set(), false, parentId, null, branchMixed);
       wireBody();
     }
     var titleEl = document.getElementById(mid + 'Title');
