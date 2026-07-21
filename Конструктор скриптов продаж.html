@@ -366,6 +366,17 @@ function replyLangBadgeHtml(node, lang) {
   var used = nodeReplyLang(node, lang);
   return used !== lang ? '<span class="lang-fallback-badge">' + used.toUpperCase() + '</span>' : '';
 }
+/* Prefer children that actually have the active language, to avoid mixing
+   RU/UZ in one list — but if NONE of them do (a branch that only exists in
+   the other language), fall back to showing them all rather than an empty,
+   seemingly-broken screen. */
+function filterEdgesByLang(edges, lang) {
+  var matching = edges.filter(function (e) {
+    var child = data.nodes.find(function (n) { return n.id === e.childNodeId; });
+    return child && nodeTitleLang(child, lang) === lang;
+  });
+  return matching.length > 0 ? matching : edges;
+}
 function langBadgeHtml(node, lang) {
   var used = nodeTitleLang(node, lang);
   return used !== lang ? '<span class="lang-fallback-badge">' + used.toUpperCase() + '</span>' : '';
@@ -599,10 +610,7 @@ function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, se
   var nextAncestors = new Set(ancestors); nextAncestors.add(node.id);
   var edges = childEdges(data, node.id);
   if (searchCtx) edges = edges.filter(function (e) { return searchCtx.visible.has(e.childNodeId); });
-  edges = edges.filter(function (e) {
-    var child = data.nodes.find(function (n) { return n.id === e.childNodeId; });
-    return child && nodeTitleLang(child, state.activeLang) === state.activeLang;
-  });
+  edges = filterEdgesByLang(edges, state.activeLang);
   var hasChildren = edges.length > 0;
   var isOpen = forceExpand || isRoot || (searchCtx && searchCtx.autoExpand.has(node.id)) || !!state.expanded[node.id];
   var reused = isNodeReused(data, node.id);
@@ -978,10 +986,7 @@ function renderOperator() {
   var project = data.projects.find(function (p) { return p.id === state.currentProjectId; });
   if (!project) return '<div class="op-shell"><div class="op-wrap"><div class="empty-state" style="color:#8b909b;">Проект не найден</div></div></div>';
   var node = data.nodes.find(function (n) { return n.id === state.currentNodeId; }) || data.nodes.find(function (n) { return n.id === project.rootNodeId; });
-  var edges = childEdges(data, node.id).filter(function (e) {
-    var child = data.nodes.find(function (n) { return n.id === e.childNodeId; });
-    return child && nodeTitleLang(child, state.activeLang) === state.activeLang;
-  });
+  var edges = filterEdgesByLang(childEdges(data, node.id), state.activeLang);
   var reply = nodeReply(node, state.activeLang);
   var has = reply && reply.trim();
   var topbar = ''
