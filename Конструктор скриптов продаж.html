@@ -11,6 +11,12 @@
   --success:#16a34a; --success-soft:#eafaf0; --danger:#dc2626; --danger-soft:#fef1f1;
   --warn:#d97706; --warn-soft:#fff7ea;
 }
+:root[data-theme="dark"]{
+  --bg:#14151c; --panel:#1c1e28; --border:#2c2f3d; --text:#eceef4; --muted:#9198ac;
+  --accent:#6d64f5; --accent-hover:#8079f7; --accent-soft:#262547;
+  --success:#22c55e; --success-soft:#123322; --danger:#f0554b; --danger-soft:#3a1a1a;
+  --warn:#f5a524; --warn-soft:#3a2f14;
+}
 *{box-sizing:border-box;}
 html,body{margin:0;height:100%;}
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);}
@@ -211,6 +217,23 @@ function loadData() {
 }
 function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 
+/* ---- theme ---- */
+var THEME_KEY = 'ssb_theme_v1';
+function getTheme() {
+  try {
+    var saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'dark' || saved === 'light') return saved;
+  } catch (e) {}
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+}
+function setTheme(theme) {
+  try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  applyTheme(theme);
+}
+
 /* ---- session ---- */
 var SESSION_KEY = 'ssb_session_v1';
 function saveSession(userId) { try { localStorage.setItem(SESSION_KEY, userId); } catch (e) {} }
@@ -362,9 +385,24 @@ function nodeReplyLang(node, lang) {
   if (node && node.managerReply && node.managerReply[lang]) return lang;
   return lang === 'ru' ? 'uz' : 'ru';
 }
-function replyLangBadgeHtml(node, lang) {
+function replyLangBadgeHtml(node, lang, mixed) {
+  if (!mixed) return '';
   var used = nodeReplyLang(node, lang);
   return used !== lang ? '<span class="lang-fallback-badge">' + used.toUpperCase() + '</span>' : '';
+}
+/* Whether a project genuinely contains content in both languages somewhere
+   (as opposed to being a single-language project where every node would
+   "fall back", making the fallback badge meaningless noise). */
+function projectLangStats(project) {
+  var hasRu = false, hasUz = false;
+  for (var i = 0; i < data.nodes.length; i++) {
+    var n = data.nodes[i];
+    if (n.projectId !== project.id) continue;
+    if (n.title && n.title.ru) hasRu = true;
+    if (n.title && n.title.uz) hasUz = true;
+    if (hasRu && hasUz) break;
+  }
+  return { hasRu: hasRu, hasUz: hasUz };
 }
 /* Prefer children that actually have the active language, to avoid mixing
    RU/UZ in one list — but if NONE of them do (a branch that only exists in
@@ -377,7 +415,8 @@ function filterEdgesByLang(edges, lang) {
   });
   return matching.length > 0 ? matching : edges;
 }
-function langBadgeHtml(node, lang) {
+function langBadgeHtml(node, lang, mixed) {
+  if (!mixed) return '';
   var used = nodeTitleLang(node, lang);
   return used !== lang ? '<span class="lang-fallback-badge">' + used.toUpperCase() + '</span>' : '';
 }
@@ -398,6 +437,7 @@ function wireLangToggle(idPrefix, onChange) {
   });
 }
 
+applyTheme(getTheme());
 var data = loadData();
 
 function currentUser() { return data.users.find(function (u) { return u.id === state.currentUserId; }); }
@@ -447,13 +487,19 @@ function wireLogin() {
 }
 
 /* ================= SHELL ================= */
+var ICON_SUN = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+var ICON_MOON = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+var ICON_HELP = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 function renderTopbar() {
   var user = currentUser();
+  var theme = getTheme();
   return ''
     + '<div class="topbar">'
     + '  <div class="brand"><div class="mark">С</div>Конструктор скриптов</div>'
     + '  <div class="spacer"></div>'
     + '  <div class="user">' + esc(user ? user.name : '') + ' · ' + (user && user.role === 'admin' ? 'администратор' : 'оператор') + '</div>'
+    + '  <button class="icon-btn" id="helpBtn" title="Как работать со скриптом">' + ICON_HELP + '</button>'
+    + '  <button class="icon-btn" id="themeToggleBtn" title="' + (theme === 'dark' ? 'Светлая тема' : 'Тёмная тема') + '">' + (theme === 'dark' ? ICON_SUN : ICON_MOON) + '</button>'
     + '  <button class="icon-btn" id="logoutBtn" title="Выйти"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>'
     + '</div>';
 }
@@ -463,6 +509,14 @@ function renderShell(inner) {
 function wireShell() {
   document.getElementById('logoutBtn').addEventListener('click', function () {
     state.currentUserId = null; state.view = 'login'; clearSession(); render();
+  });
+  document.getElementById('themeToggleBtn').addEventListener('click', function () {
+    setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+    render();
+  });
+  var helpBtn = document.getElementById('helpBtn');
+  if (helpBtn) helpBtn.addEventListener('click', function () {
+    showToast('Дерево слева — структура диалога. Стрелка раскрывает узел, «+ Добавить ответы» создаёт новые ветки.');
   });
 }
 
@@ -594,15 +648,15 @@ var ICON_BRANCH = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke=
 var ICON_DETACH = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.84 12.25l1.72-1.71a4.5 4.5 0 0 0-6.36-6.37L12.5 5.86"/><path d="M5.17 11.75l-1.71 1.71a4.5 4.5 0 0 0 6.36 6.37l1.7-1.7"/><line x1="8" y1="16" x2="16" y2="8"/></svg>';
 var ICON_DELETE = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
 
-function renderReplyBox(node) {
+function renderReplyBox(node, mixed) {
   var reply = nodeReply(node, state.activeLang);
   var has = reply && reply.trim();
   return '<div class="node-reply-box' + (has ? '' : ' empty') + '">'
-    + (has ? replyLangBadgeHtml(node, state.activeLang) + reply : 'Реплика менеджера не указана!')
+    + (has ? replyLangBadgeHtml(node, state.activeLang, mixed) + reply : 'Реплика менеджера не указана!')
     + '<button class="edit-reply-btn" data-edit-reply="' + node.id + '" title="Редактировать реплику">' + ICON_RENAME + '</button>'
     + '</div>';
 }
-function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, searchCtx) {
+function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, searchCtx, mixed) {
   ancestors = ancestors || new Set();
   if (ancestors.has(node.id)) {
     return '<div class="node-row"><span class="chevron"></span><span class="node-icon">' + ICON_NODE + '</span><span class="title">' + esc(nodeTitle(node, state.activeLang)) + ' (цикл)</span></div>';
@@ -624,7 +678,7 @@ function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, se
     + (!isRoot ? '<button class="danger" data-node-act="delete" data-id="' + node.id + '" title="Удалить">' + ICON_DELETE + '</button>' : '')
     + '</div>';
   var row = '<div class="node-row' + (isRoot ? ' root-row' : '') + '" data-row="' + node.id + '">'
-    + chevron + icon + '<span class="title">' + esc(nodeTitle(node, state.activeLang)) + '</span>' + langBadgeHtml(node, state.activeLang)
+    + chevron + icon + '<span class="title">' + esc(nodeTitle(node, state.activeLang)) + '</span>' + langBadgeHtml(node, state.activeLang, mixed)
     + (reused ? '<span class="reuse-badge">переиспользуется</span>' : '')
     + actions + '</div>';
 
@@ -633,10 +687,10 @@ function renderNodeRow(node, depth, isRoot, ancestors, forceExpand, parentId, se
     var childNodesHtml = hasChildren
       ? '<div class="node-children">' + edges.map(function (e) {
           var child = data.nodes.find(function (n) { return n.id === e.childNodeId; });
-          return child ? renderNodeRow(child, depth + 1, false, nextAncestors, forceExpand, node.id, searchCtx) : '';
+          return child ? renderNodeRow(child, depth + 1, false, nextAncestors, forceExpand, node.id, searchCtx, mixed) : '';
         }).join('') + '</div>'
       : '';
-    childrenHtml = renderReplyBox(node) + '<button class="add-answers-link" data-add="' + node.id + '">+ Добавить ответы</button>' + childNodesHtml;
+    childrenHtml = renderReplyBox(node, mixed) + '<button class="add-answers-link" data-add="' + node.id + '">+ Добавить ответы</button>' + childNodesHtml;
   }
   return row + childrenHtml;
 }
@@ -649,7 +703,9 @@ function renderNodeTree(project) {
     searchCtx = computeSearchVisibility(project, q);
     if (!searchCtx.visible.has(root.id)) return '<div class="empty-state">Ничего не найдено</div>';
   }
-  return renderNodeRow(root, 0, true, new Set(), false, null, searchCtx);
+  var stats = projectLangStats(project);
+  var mixed = stats.hasRu && stats.hasUz;
+  return renderNodeRow(root, 0, true, new Set(), false, null, searchCtx, mixed);
 }
 function renderEditorMain() {
   return '<div class="editor-hint">'
@@ -987,6 +1043,8 @@ function renderOperator() {
   if (!project) return '<div class="op-shell"><div class="op-wrap"><div class="empty-state" style="color:#8b909b;">Проект не найден</div></div></div>';
   var node = data.nodes.find(function (n) { return n.id === state.currentNodeId; }) || data.nodes.find(function (n) { return n.id === project.rootNodeId; });
   var edges = filterEdgesByLang(childEdges(data, node.id), state.activeLang);
+  var langStats = projectLangStats(project);
+  var mixed = langStats.hasRu && langStats.hasUz;
   var reply = nodeReply(node, state.activeLang);
   var has = reply && reply.trim();
   var topbar = ''
@@ -999,11 +1057,11 @@ function renderOperator() {
     + '  <button class="op-icon-btn" id="opResetBtn" title="Начать сначала"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>'
     + '</div>';
   var card = '<div class="op-card"><div class="op-actions"><button class="op-icon-btn" id="opCopyBtn" title="Скопировать текст"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>'
-    + '<h2>' + esc(nodeTitle(node, state.activeLang)) + langBadgeHtml(node, state.activeLang) + '</h2><div class="reply' + (has ? '' : ' empty') + '" style="font-size:' + state.opFontSize + 'px;">' + (has ? replyLangBadgeHtml(node, state.activeLang) + reply : 'Реплика менеджера не указана!') + '</div></div>';
+    + '<h2>' + esc(nodeTitle(node, state.activeLang)) + langBadgeHtml(node, state.activeLang, mixed) + '</h2><div class="reply' + (has ? '' : ' empty') + '" style="font-size:' + state.opFontSize + 'px;">' + (has ? replyLangBadgeHtml(node, state.activeLang, mixed) + reply : 'Реплика менеджера не указана!') + '</div></div>';
   var optionsOrEnd = edges.length
     ? '<div class="op-options">' + edges.map(function (e) {
         var child = data.nodes.find(function (n) { return n.id === e.childNodeId; });
-        return child ? '<button data-goto="' + child.id + '">' + esc(nodeTitle(child, state.activeLang)) + langBadgeHtml(child, state.activeLang) + '</button>' : '';
+        return child ? '<button data-goto="' + child.id + '">' + esc(nodeTitle(child, state.activeLang)) + langBadgeHtml(child, state.activeLang, mixed) + '</button>' : '';
       }).join('') + '</div>'
     : '<div class="op-end">Это конец сценария для данной ветки.</div>';
   return '<div class="op-shell">' + topbar + '<div class="op-wrap">' + card + optionsOrEnd + '</div></div>';
